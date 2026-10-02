@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { supabaseAdmin } from "@/app/lib/supabaseAdmin";
 
 const TEST_URL =
@@ -287,7 +288,8 @@ async function saveDisplayName(
       .update({
         display_name: displayName,
         awaiting_name: false,
-        updated_at: new Date().toISOString(),
+        updated_at:
+          new Date().toISOString(),
       })
       .eq(
         "telegram_user_id",
@@ -321,7 +323,7 @@ async function getUserAttempt(
     await supabaseAdmin
       .from("attempts")
       .select(
-        "id, score, total, weighted_score, time_used, is_premium, premium_code, premium_paid_at, created_at"
+        "id, score, total, weighted_score, time_used, is_premium, premium_code, premium_paid_at, certificate_id, share_token, created_at"
       )
       .eq(
         "telegram_user_id",
@@ -526,7 +528,7 @@ Testni boshlashdan oldin
 ismingizni kiriting.
 
 Masalan:
-Mehriddin
+Mehriddin Abdurahimov
 
 👇 Ism-familiyangizni yozing:`,
         {
@@ -565,8 +567,6 @@ Mehriddin Abdurahimov`
         });
       }
 
-      // Menu tugmalarini ism sifatida
-      // saqlab yubormaslik
       const menuTexts = new Set([
         "🧠 TESTNI BOSHLASH",
         "📊 NATIJAM",
@@ -579,7 +579,9 @@ Mehriddin Abdurahimov`
         "🏠 ASOSIY MENU",
       ]);
 
-      if (menuTexts.has(text)) {
+      if (
+        menuTexts.has(text)
+      ) {
         await sendTelegramMessage(
           chatId,
           `👤 Avval ismingizni kiriting.
@@ -639,7 +641,9 @@ to‘g‘ri kiriting.`
           userId
         );
 
-      if (attempt?.is_premium) {
+      if (
+        attempt?.is_premium
+      ) {
         const rank =
           await getUserRankingPosition(
             userId
@@ -667,7 +671,9 @@ ${rankText}
 👇 Kerakli bo‘limni tanlang.`,
           PREMIUM_USER_KEYBOARD
         );
-      } else if (attempt) {
+      } else if (
+        attempt
+      ) {
         await sendTelegramMessage(
           chatId,
           `✅ Rahmat, ${displayName}!
@@ -728,8 +734,6 @@ ${rankText}
         telegramUser.display_name ||
         "do‘st";
 
-      // NEW USER
-
       if (!attempt) {
         await sendTelegramMessage(
           chatId,
@@ -753,8 +757,6 @@ o‘zingizni sinab ko‘ring.
           ok: true,
         });
       }
-
-      // PREMIUM USER
 
       if (attempt.is_premium) {
         const rank =
@@ -789,8 +791,6 @@ ${rankText}
           ok: true,
         });
       }
-
-      // USED USER
 
       await sendTelegramMessage(
         chatId,
@@ -949,8 +949,11 @@ Premium tarkibi:
 ✓ Sertifikat
 ✓ AqlTest reytingi
 
-💳 To‘lov tizimi:
-Click integratsiyasi tayyorlanmoqda.`,
+💳 To‘lov:
+Click integratsiyasi tayyorlanmoqda.
+
+To‘lov tizimi ishga tushgach,
+shu bo‘lim orqali to‘lov qilasiz.`,
         await getUserKeyboard(
           userId
         )
@@ -1145,9 +1148,10 @@ Batafsil tahlil hali ochilmagan.
         "/premium_on "
       )
     ) {
+      // Faqat admin
       if (
         String(userId) !==
-        ADMIN_TELEGRAM_ID
+        String(ADMIN_TELEGRAM_ID)
       ) {
         await sendTelegramMessage(
           chatId,
@@ -1171,6 +1175,7 @@ Batafsil tahlil hali ochilmagan.
           .trim()
           .toUpperCase();
 
+      // Kod formati
       if (
         !/^AQL-[A-F0-9]{10}$/.test(
           code
@@ -1190,13 +1195,14 @@ AQL-XXXXXXXXXX`,
         });
       }
 
+      // Attemptni topish
       const {
         data: attempt,
         error,
       } = await supabaseAdmin
         .from("attempts")
         .select(
-          "id, telegram_user_id, premium_code, is_premium"
+          "id, telegram_user_id, premium_code, is_premium, certificate_id, share_token"
         )
         .eq(
           "premium_code",
@@ -1233,6 +1239,7 @@ AQL-XXXXXXXXXX`,
         });
       }
 
+      // Allaqachon premium
       if (attempt.is_premium) {
         await sendTelegramMessage(
           chatId,
@@ -1245,14 +1252,35 @@ ${code}`,
 
         return NextResponse.json({
           ok: true,
+          premium: true,
+          attemptId: attempt.id,
         });
       }
+
+      // Certificate ID
+      const certificateId =
+        attempt.certificate_id ||
+        `AQL-CERT-${crypto
+          .randomBytes(5)
+          .toString("hex")
+          .toUpperCase()}`;
+
+      // Public share token
+      const shareToken =
+        attempt.share_token ||
+        crypto
+          .randomBytes(16)
+          .toString("hex");
 
       const { error: updateError } =
         await supabaseAdmin
           .from("attempts")
           .update({
             is_premium: true,
+            certificate_id:
+              certificateId,
+            share_token:
+              shareToken,
           })
           .eq(
             "id",
@@ -1283,12 +1311,19 @@ ${code}`,
 Kod:
 ${code}
 
-Foydalanuvchi endi:
+📜 Sertifikat ID:
+${certificateId}
+
+🔗 Natijani ulashish uchun
+maxsus token ham yaratildi.
+
+Endi foydalanuvchi:
 💎 Premium natija
 🏆 Reyting
 📜 Sertifikat
+🔗 Natijani ulashish
 
-dan foydalanishi mumkin.`,
+imkoniyatlaridan foydalanishi mumkin.`,
         PREMIUM_USER_KEYBOARD
       );
 
@@ -1296,11 +1331,13 @@ dan foydalanishi mumkin.`,
         ok: true,
         premium: true,
         attemptId: attempt.id,
+        certificateId,
+        shareToken,
       });
     }
 
     // =======================================================
-    // EMPTY
+    // EMPTY MESSAGE
     // =======================================================
 
     if (!text) {
@@ -1351,7 +1388,7 @@ yuboring.`,
     } = await supabaseAdmin
       .from("attempts")
       .select(
-        "id, telegram_user_id, premium_code, is_premium"
+        "id, telegram_user_id, premium_code, is_premium, certificate_id, share_token"
       )
       .eq(
         "premium_code",
@@ -1394,7 +1431,9 @@ Kodni qayta tekshirib yuboring.`,
       });
     }
 
+    // =======================================================
     // TELEGRAM USER CHECK
+    // =======================================================
 
     if (
       attempt.telegram_user_id !==
@@ -1421,7 +1460,9 @@ foydalaning.`,
       });
     }
 
+    // =======================================================
     // ALREADY PREMIUM
+    // =======================================================
 
     if (attempt.is_premium) {
       await sendTelegramMessage(
@@ -1442,7 +1483,9 @@ ochiq.`,
       });
     }
 
+    // =======================================================
     // PAYMENT WAITING
+    // =======================================================
 
     await sendTelegramMessage(
       chatId,
