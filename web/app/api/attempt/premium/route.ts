@@ -70,14 +70,41 @@ export async function GET(request: Request) {
       );
     }
 
+    // =========================
+    // PREMIUM ACCESS CHECK
+    // =========================
+
+    if (!attempt.is_premium) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Premium natija hali ochilmagan.",
+          premiumRequired: true,
+        },
+        { status: 403 }
+      );
+    }
+
+    // =========================
+    // ANSWERS
+    // =========================
+
     const answers = Array.isArray(attempt.answers)
       ? attempt.answers
       : [];
 
+    // =========================
+    // SECTION RESULTS
+    // =========================
+
     const sectionResults = sections.map((section) => {
       let score = 0;
 
-      for (let i = section.start; i <= section.end; i++) {
+      for (
+        let i = section.start;
+        i <= section.end;
+        i++
+      ) {
         if (answers[i] === answerKey[i]) {
           score++;
         }
@@ -87,16 +114,27 @@ export async function GET(request: Request) {
         name: section.name,
         icon: section.icon,
         score,
-        total: section.end - section.start + 1,
+        total:
+          section.end - section.start + 1,
         percentage: Math.round(
-          (score / (section.end - section.start + 1)) * 100
+          (score /
+            (section.end - section.start + 1)) *
+            100
         ),
       };
     });
 
+    // =========================
+    // STRONGEST SECTION
+    // =========================
+
     const strongestSection = [...sectionResults].sort(
       (a, b) => b.score - a.score
     )[0];
+
+    // =========================
+    // RESPONSE
+    // =========================
 
     return NextResponse.json({
       success: true,
@@ -115,7 +153,10 @@ export async function GET(request: Request) {
       strongestSection,
     });
   } catch (error) {
-    console.error("Premium API error:", error);
+    console.error(
+      "Premium API error:",
+      error
+    );
 
     return NextResponse.json(
       { error: "Server xatosi." },
