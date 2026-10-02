@@ -9,6 +9,7 @@ type ResultData = {
   percentage: number;
   timeUsed: number;
   answers: (string | null)[];
+  premiumCode: string | null;
 };
 
 export default function ResultPage() {
@@ -59,6 +60,7 @@ export default function ResultPage() {
           percentage: attempt.percentage,
           timeUsed: attempt.time_used,
           answers: attempt.answers,
+          premiumCode: attempt.premium_code ?? null,
         });
       } catch (error) {
         console.error(
@@ -219,6 +221,36 @@ export default function ResultPage() {
             </div>
 
           </div>
+
+          {/* =========================
+              PREMIUM CODE
+          ========================= */}
+
+          {result.premiumCode && (
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4 sm:p-5 mb-4">
+
+              <div className="text-blue-400 text-xs font-bold mb-1.5">
+                PREMIUM KOD
+              </div>
+
+              <h2 className="text-base sm:text-lg font-bold mb-2">
+                Sizning maxsus kodingiz
+              </h2>
+
+              <div className="bg-slate-950 rounded-xl px-4 py-3 text-center border border-slate-700">
+                <div className="text-xl sm:text-2xl font-bold tracking-wider text-white break-all">
+                  {result.premiumCode}
+                </div>
+              </div>
+
+              <p className="text-slate-400 text-[11px] sm:text-xs leading-relaxed mt-2.5">
+                Ushbu kod premium natijani ochish uchun
+                kerak bo‘ladi. To‘lovdan so‘ng kodni
+                Telegram botga yuborasiz.
+              </p>
+
+            </div>
+          )}
 
           {/* =========================
               SHORT PREVIEW
