@@ -1,17 +1,25 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabase } from "@/app/lib/supabase";
+import { supabaseAdmin } from "@/app/lib/supabaseAdmin";
 import { answerKey } from "./answer-key";
 
 function validateTelegramInitData(initData: string) {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const botToken =
+    process.env.TELEGRAM_BOT_TOKEN;
 
   if (!botToken) {
-    throw new Error("TELEGRAM_BOT_TOKEN topilmadi.");
+    throw new Error(
+      "TELEGRAM_BOT_TOKEN topilmadi."
+    );
   }
 
-  const params = new URLSearchParams(initData);
-  const receivedHash = params.get("hash");
+  const params = new URLSearchParams(
+    initData
+  );
+
+  const receivedHash =
+    params.get("hash");
 
   if (!receivedHash) {
     return null;
@@ -19,37 +27,62 @@ function validateTelegramInitData(initData: string) {
 
   params.delete("hash");
 
-  const dataCheckString = Array.from(params.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => `${key}=${value}`)
-    .join("\n");
+  const dataCheckString =
+    Array.from(params.entries())
+      .sort(([a], [b]) =>
+        a.localeCompare(b)
+      )
+      .map(
+        ([key, value]) =>
+          `${key}=${value}`
+      )
+      .join("\n");
 
-  const secretKey = crypto
-    .createHmac("sha256", "WebAppData")
-    .update(botToken)
-    .digest();
+  const secretKey =
+    crypto
+      .createHmac(
+        "sha256",
+        "WebAppData"
+      )
+      .update(botToken)
+      .digest();
 
-  const calculatedHash = crypto
-    .createHmac("sha256", secretKey)
-    .update(dataCheckString)
-    .digest("hex");
+  const calculatedHash =
+    crypto
+      .createHmac(
+        "sha256",
+        secretKey
+      )
+      .update(dataCheckString)
+      .digest("hex");
 
-  if (calculatedHash !== receivedHash) {
+  if (
+    calculatedHash !==
+    receivedHash
+  ) {
     return null;
   }
 
-  const userString = params.get("user");
+  const userString =
+    params.get("user");
 
   if (!userString) {
     return null;
   }
 
-  return JSON.parse(userString);
+  try {
+    return JSON.parse(userString);
+  } catch {
+    return null;
+  }
 }
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request
+) {
   try {
-    const body = await request.json();
+    const body =
+      await request.json();
 
     const {
       answers,
@@ -62,17 +95,29 @@ export async function POST(request: Request) {
       typeof timeUsed !== "number"
     ) {
       return NextResponse.json(
-        { error: "Noto‘g‘ri ma'lumot yuborildi." },
+        {
+          error:
+            "Noto‘g‘ri ma'lumot yuborildi.",
+        },
         { status: 400 }
       );
     }
 
-    let telegramUserId: number | null = null;
-    let displayName: string | null = null;
+    let telegramUserId:
+      number | null = null;
+
+    let telegramFirstName = "";
+    let telegramLastName = "";
+
+    // =========================================================
+    // TELEGRAM AUTH
+    // =========================================================
+
     if (telegramInitData) {
-      const telegramUser = validateTelegramInitData(
-        telegramInitData
-      );
+      const telegramUser =
+        validateTelegramInitData(
+          telegramInitData
+        );
 
       if (!telegramUser) {
         return NextResponse.json(
@@ -84,61 +129,155 @@ export async function POST(request: Request) {
         );
       }
 
-      telegramUserId = telegramUser.id;
-      displayName = [
-  telegramUser.first_name,
-  telegramUser.last_name,
-]
-  .filter(Boolean)
-  .join(" ");
+      telegramUserId =
+        Number(
+          telegramUser.id
+        );
+
+      telegramFirstName =
+        telegramUser.first_name ??
+        "";
+
+      telegramLastName =
+        telegramUser.last_name ??
+        "";
     }
 
+    // =========================================================
+    // GET USER-SELECTED NAME
+    // =========================================================
+
+    let displayName:
+      string | null = null;
+
+    if (telegramUserId !== null) {
+      const {
+        data: telegramProfile,
+        error: profileError,
+      } = await supabaseAdmin
+        .from("telegram_users")
+        .select(
+          "display_name"
+        )
+        .eq(
+          "telegram_user_id",
+          telegramUserId
+        )
+        .maybeSingle();
+
+      if (profileError) {
+        console.error(
+          "Telegram profile error:",
+          profileError
+        );
+      }
+
+      if (
+        telegramProfile?.display_name
+      ) {
+        displayName =
+          telegramProfile.display_name
+            .trim();
+      }
+
+      // Fallback
+      if (!displayName) {
+        displayName = [
+          telegramFirstName,
+          telegramLastName,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+      }
+    }
+
+    // =========================================================
+    // WEIGHTED SCORING
+    // TOTAL = 100
+    // =========================================================
+
     const questionWeights = [
-  2, 2, 3, 3,
-  3, 3, 4, 4,
-  3, 3, 4, 4,
-  6, 4, 5, 5,
-  4, 5, 5, 6,
-  5, 5, 6, 6,
-];
+      2, 2, 3, 3,
+      3, 3, 4, 4,
+      3, 3, 4, 4,
+      6, 4, 5, 5,
+      4, 5, 5, 6,
+      5, 5, 6, 6,
+    ];
 
-let score = 0;
-let weightedScore = 0;
+    let score = 0;
+    let weightedScore = 0;
 
-for (let i = 0; i < answerKey.length; i++) {
-  if (answers[i] === answerKey[i]) {
-    score++;
-    weightedScore += questionWeights[i];
-  }
-}
+    for (
+      let i = 0;
+      i < answerKey.length;
+      i++
+    ) {
+      if (
+        answers[i] ===
+        answerKey[i]
+      ) {
+        score++;
 
-const total = answerKey.length;
+        weightedScore +=
+          questionWeights[i];
+      }
+    }
 
-// AqlTest Score: 0–100
-const percentage = weightedScore;
+    const total =
+      answerKey.length;
 
-    const attemptId = crypto.randomUUID();
+    // AqlTest Score = 0–100
+    const percentage =
+      weightedScore;
 
-    // Noyob premium kod
+    // =========================================================
+    // ATTEMPT ID
+    // =========================================================
+
+    const attemptId =
+      crypto.randomUUID();
+
+    // =========================================================
+    // PREMIUM CODE
+    // =========================================================
+
     const premiumCode =
-      `AQL-${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
+      `AQL-${crypto
+        .randomBytes(5)
+        .toString("hex")
+        .toUpperCase()}`;
 
-    const { error } = await supabase
-      .from("attempts")
-      .insert({
-  id: attemptId,
-  score,
-  total,
-  percentage,
-  time_used: timeUsed,
-  answers,
-  telegram_user_id: telegramUserId,
-  display_name: displayName,
-  premium_code: premiumCode,
-})
+    // =========================================================
+    // SAVE ATTEMPT
+    // =========================================================
+
+    const { error } =
+      await supabase
+        .from("attempts")
+        .insert({
+          id: attemptId,
+          score,
+          total,
+          percentage,
+          weighted_score:
+            weightedScore,
+          time_used: timeUsed,
+          answers,
+          telegram_user_id:
+            telegramUserId,
+          display_name:
+            displayName,
+          premium_code:
+            premiumCode,
+        });
 
     if (error) {
-      console.error("Supabase error:", error);
+      console.error(
+        "Supabase error:",
+        error
+      );
 
       if (
         error.code === "23505" &&
@@ -162,6 +301,10 @@ const percentage = weightedScore;
       );
     }
 
+    // =========================================================
+    // RESPONSE
+    // =========================================================
+
     return NextResponse.json({
       success: true,
       attemptId,
@@ -169,13 +312,20 @@ const percentage = weightedScore;
       score,
       total,
       percentage,
+      weightedScore,
       telegramUserId,
+      displayName,
     });
   } catch (error) {
-    console.error("API error:", error);
+    console.error(
+      "API error:",
+      error
+    );
 
     return NextResponse.json(
-      { error: "Server xatosi." },
+      {
+        error: "Server xatosi.",
+      },
       { status: 500 }
     );
   }

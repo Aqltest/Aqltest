@@ -210,6 +210,107 @@ async function sendTelegramMessage(
 }
 
 // =========================================================
+// GET TELEGRAM USER PROFILE
+// =========================================================
+
+async function getTelegramUser(
+  telegramUserId: number
+) {
+  const { data, error } =
+    await supabaseAdmin
+      .from("telegram_users")
+      .select(
+        "telegram_user_id, display_name, awaiting_name"
+      )
+      .eq(
+        "telegram_user_id",
+        telegramUserId
+      )
+      .maybeSingle();
+
+  if (error) {
+    console.error(
+      "Telegram user query error:",
+      error
+    );
+
+    return null;
+  }
+
+  return data;
+}
+
+// =========================================================
+// CREATE TELEGRAM USER
+// =========================================================
+
+async function createTelegramUser(
+  telegramUserId: number
+) {
+  const { data, error } =
+    await supabaseAdmin
+      .from("telegram_users")
+      .insert({
+        telegram_user_id:
+          telegramUserId,
+        display_name: null,
+        awaiting_name: true,
+      })
+      .select(
+        "telegram_user_id, display_name, awaiting_name"
+      )
+      .single();
+
+  if (error) {
+    console.error(
+      "Telegram user create error:",
+      error
+    );
+
+    return null;
+  }
+
+  return data;
+}
+
+// =========================================================
+// SAVE DISPLAY NAME
+// =========================================================
+
+async function saveDisplayName(
+  telegramUserId: number,
+  displayName: string
+) {
+  const { data, error } =
+    await supabaseAdmin
+      .from("telegram_users")
+      .update({
+        display_name: displayName,
+        awaiting_name: false,
+        updated_at: new Date().toISOString(),
+      })
+      .eq(
+        "telegram_user_id",
+        telegramUserId
+      )
+      .select(
+        "telegram_user_id, display_name, awaiting_name"
+      )
+      .single();
+
+  if (error) {
+    console.error(
+      "Display name save error:",
+      error
+    );
+
+    return null;
+  }
+
+  return data;
+}
+
+// =========================================================
 // GET USER'S LATEST ATTEMPT
 // =========================================================
 
@@ -375,10 +476,6 @@ export async function POST(
     const text =
       message.text?.trim();
 
-    const firstName =
-      message.from?.first_name ??
-      "";
-
     if (
       !chatId ||
       !telegramUserId
@@ -390,6 +487,227 @@ export async function POST(
 
     const userId =
       Number(telegramUserId);
+
+    // =======================================================
+    // USER PROFILE
+    // =======================================================
+
+    let telegramUser =
+      await getTelegramUser(
+        userId
+      );
+
+    // =======================================================
+    // FIRST CONTACT
+    // =======================================================
+
+    if (!telegramUser) {
+      telegramUser =
+        await createTelegramUser(
+          userId
+        );
+
+      if (!telegramUser) {
+        return NextResponse.json(
+          {
+            ok: false,
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      await sendTelegramMessage(
+        chatId,
+        `🧠 AqlTest'ga xush kelibsiz!
+
+Testni boshlashdan oldin
+ismingizni kiriting.
+
+Masalan:
+Mehriddin
+
+👇 Ism-familiyangizni yozing:`,
+        {
+          remove_keyboard: true,
+        }
+      );
+
+      return NextResponse.json({
+        ok: true,
+        awaitingName: true,
+      });
+    }
+
+    // =======================================================
+    // WAITING FOR NAME
+    // =======================================================
+
+    if (
+      telegramUser.awaiting_name
+    ) {
+      if (
+        !text ||
+        text.startsWith("/")
+      ) {
+        await sendTelegramMessage(
+          chatId,
+          `👤 Avval ismingizni kiriting.
+
+Masalan:
+Mehriddin Abdurahimov`
+        );
+
+        return NextResponse.json({
+          ok: true,
+          awaitingName: true,
+        });
+      }
+
+      // Menu tugmalarini ism sifatida
+      // saqlab yubormaslik
+      const menuTexts = new Set([
+        "🧠 TESTNI BOSHLASH",
+        "📊 NATIJAM",
+        "💎 PREMIUM NATIJAM",
+        "🏆 REYTING",
+        "📜 SERTIFIKAT",
+        "💰 TO‘LOV",
+        "ℹ️ YORDAM",
+        "🌐 TIL",
+        "🏠 ASOSIY MENU",
+      ]);
+
+      if (menuTexts.has(text)) {
+        await sendTelegramMessage(
+          chatId,
+          `👤 Avval ismingizni kiriting.
+
+Masalan:
+Mehriddin Abdurahimov`
+        );
+
+        return NextResponse.json({
+          ok: true,
+          awaitingName: true,
+        });
+      }
+
+      const displayName =
+        text
+          .replace(/\s+/g, " ")
+          .trim();
+
+      if (
+        displayName.length < 2 ||
+        displayName.length > 60
+      ) {
+        await sendTelegramMessage(
+          chatId,
+          `❌ Ism juda qisqa yoki juda uzun.
+
+Iltimos, ism-familiyangizni
+to‘g‘ri kiriting.`
+        );
+
+        return NextResponse.json({
+          ok: true,
+          awaitingName: true,
+        });
+      }
+
+      const savedUser =
+        await saveDisplayName(
+          userId,
+          displayName
+        );
+
+      if (!savedUser) {
+        await sendTelegramMessage(
+          chatId,
+          "⚠️ Ismni saqlashda xatolik yuz berdi. Birozdan keyin yana urinib ko‘ring."
+        );
+
+        return NextResponse.json({
+          ok: true,
+        });
+      }
+
+      const attempt =
+        await getUserAttempt(
+          userId
+        );
+
+      if (attempt?.is_premium) {
+        const rank =
+          await getUserRankingPosition(
+            userId
+          );
+
+        const rankText =
+          rank !== null
+            ? `🏆 Reytingdagi o‘rningiz: ${rank}`
+            : "🏆 Reyting: hisoblanmoqda";
+
+        await sendTelegramMessage(
+          chatId,
+          `✅ Rahmat, ${displayName}!
+
+🧠 AqlTest profilingiz tayyor.
+
+✅ Premium faol
+🧠 AqlTest Score: ${
+            attempt.weighted_score ??
+            "—"
+          }
+
+${rankText}
+
+👇 Kerakli bo‘limni tanlang.`,
+          PREMIUM_USER_KEYBOARD
+        );
+      } else if (attempt) {
+        await sendTelegramMessage(
+          chatId,
+          `✅ Rahmat, ${displayName}!
+
+🧠 AqlTest profilingiz tayyor.
+
+✅ Test topshirilgan
+🧠 AqlTest Score: ${
+            attempt.weighted_score ??
+            "—"
+          }
+
+💎 Premium: faol emas
+
+👇 Kerakli bo‘limni tanlang.`,
+          USED_USER_KEYBOARD
+        );
+      } else {
+        await sendTelegramMessage(
+          chatId,
+          `✅ Rahmat, ${displayName}!
+
+🧠 AqlTest profilingiz tayyor.
+
+24 ta savol
+⏱ 12 daqiqa
+💎 Premium natija
+🏆 Reyting
+📜 Sertifikat
+
+👇 Testni boshlang.`,
+          NEW_USER_KEYBOARD
+        );
+      }
+
+      return NextResponse.json({
+        ok: true,
+        nameSaved: true,
+      });
+    }
 
     // =======================================================
     // START / MENU
@@ -406,16 +724,19 @@ export async function POST(
           userId
         );
 
+      const displayName =
+        telegramUser.display_name ||
+        "do‘st";
+
       // NEW USER
+
       if (!attempt) {
         await sendTelegramMessage(
           chatId,
-          `🧠 AqlTest'ga xush kelibsiz, ${
-            firstName || "do‘st"
-          }!
+          `🧠 Xush kelibsiz, ${displayName}!
 
-Mantiqiy fikrlash qobiliyatingizni
-24 ta savol orqali sinab ko‘ring.
+24 ta mantiqiy savol orqali
+o‘zingizni sinab ko‘ring.
 
 ⏱ 12 daqiqa
 🧩 6 ta yo‘nalish
@@ -434,6 +755,7 @@ Mantiqiy fikrlash qobiliyatingizni
       }
 
       // PREMIUM USER
+
       if (attempt.is_premium) {
         const rank =
           await getUserRankingPosition(
@@ -447,9 +769,7 @@ Mantiqiy fikrlash qobiliyatingizni
 
         await sendTelegramMessage(
           chatId,
-          `🧠 Xush kelibsiz, ${
-            firstName || "do‘st"
-          }!
+          `🧠 Xush kelibsiz, ${displayName}!
 
 ✅ Premium faol
 🧠 AqlTest Score: ${
@@ -471,11 +791,10 @@ ${rankText}
       }
 
       // USED USER
+
       await sendTelegramMessage(
         chatId,
-        `🧠 Xush kelibsiz, ${
-          firstName || "do‘st"
-        }!
+        `🧠 Xush kelibsiz, ${displayName}!
 
 ✅ Test topshirilgan
 🧠 AqlTest Score: ${
@@ -487,9 +806,7 @@ ${rankText}
 🏆 Reyting: premiumdan keyin
 📜 Sertifikat: premiumdan keyin
 
-👇 Batafsil natijani ko‘rish
-yoki premiumni ochish uchun
-kerakli bo‘limni tanlang.`,
+👇 Kerakli bo‘limni tanlang.`,
         USED_USER_KEYBOARD
       );
 
@@ -541,11 +858,6 @@ ishlab ko‘ring.`,
           seconds
         ).padStart(2, "0")}`;
 
-      const premiumStatus =
-        attempt.is_premium
-          ? "✅ Premium faol"
-          : "💎 Premium: faol emas";
-
       await sendTelegramMessage(
         chatId,
         `📊 SIZNING NATIJANGIZ
@@ -562,7 +874,11 @@ ${formattedTime}
 📝 Savollar:
 ${attempt.total}
 
-${premiumStatus}
+${
+  attempt.is_premium
+    ? "✅ Premium faol"
+    : "💎 Premium: faol emas"
+}
 
 ${
   attempt.is_premium
@@ -587,11 +903,6 @@ ${
       text === "/help" ||
       text === "ℹ️ YORDAM"
     ) {
-      const keyboard =
-        await getUserKeyboard(
-          userId
-        );
-
       await sendTelegramMessage(
         chatId,
         `ℹ️ AqlTest yordam
@@ -602,12 +913,12 @@ ${
 🏆 Reyting — premium foydalanuvchilar
 📜 Sertifikat — premium natijadan so‘ng
 
-Premium kodingiz bo‘lsa,
-uni shu chatga yuboring.
-
-Kod formati:
-AQL-XXXXXXXXXX`,
-        keyboard
+Premium kod bo‘lsa,
+AQL-XXXXXXXXXX formatida
+shu chatga yuboring.`,
+        await getUserKeyboard(
+          userId
+        )
       );
 
       return NextResponse.json({
@@ -623,11 +934,6 @@ AQL-XXXXXXXXXX`,
       text === "💰 TO‘LOV" ||
       text === "/payment"
     ) {
-      const keyboard =
-        await getUserKeyboard(
-          userId
-        );
-
       await sendTelegramMessage(
         chatId,
         `💰 AqlTest Premium
@@ -644,11 +950,10 @@ Premium tarkibi:
 ✓ AqlTest reytingi
 
 💳 To‘lov tizimi:
-Click integratsiyasi tayyorlanmoqda.
-
-To‘lov tizimi ishga tushgach,
-shu bo‘lim orqali to‘lov qilasiz.`,
-        keyboard
+Click integratsiyasi tayyorlanmoqda.`,
+        await getUserKeyboard(
+          userId
+        )
       );
 
       return NextResponse.json({
@@ -664,11 +969,6 @@ shu bo‘lim orqali to‘lov qilasiz.`,
       text === "/language" ||
       text === "🌐 TIL"
     ) {
-      const keyboard =
-        await getUserKeyboard(
-          userId
-        );
-
       await sendTelegramMessage(
         chatId,
         `🌐 Til
@@ -677,7 +977,9 @@ shu bo‘lim orqali to‘lov qilasiz.`,
 
 🇷🇺 Русский — tez orada
 🇬🇧 English — tez orada`,
-        keyboard
+        await getUserKeyboard(
+          userId
+        )
       );
 
       return NextResponse.json({
@@ -693,11 +995,6 @@ shu bo‘lim orqali to‘lov qilasiz.`,
       text === "/ranking" ||
       text === "🏆 REYTING"
     ) {
-      const keyboard =
-        await getUserKeyboard(
-          userId
-        );
-
       await sendTelegramMessage(
         chatId,
         `🏆 AqlTest Reyting
@@ -710,7 +1007,9 @@ reytingda hisobga olinadi.
 
 👇 Reytingni oching:
 🏆 REYTING`,
-        keyboard
+        await getUserKeyboard(
+          userId
+        )
       );
 
       return NextResponse.json({
@@ -813,8 +1112,7 @@ ishlab ko‘ring.`,
 
 Batafsil tahlil hali ochilmagan.
 
-👇 Natijangizdan premiumni
-ochishingiz mumkin:
+👇 Avval natijangizni ko‘ring:
 📊 NATIJAM`,
           USED_USER_KEYBOARD
         );
@@ -1023,11 +1321,6 @@ dan foydalanishi mumkin.`,
         code
       )
     ) {
-      const keyboard =
-        await getUserKeyboard(
-          userId
-        );
-
       await sendTelegramMessage(
         chatId,
         `🧠 AqlTest
@@ -1036,9 +1329,11 @@ Kerakli bo‘limni menyudan
 tanlang.
 
 Agar premium kodingiz bo‘lsa,
-uni AQL-XXXXXXXXXX formatida
+AQL-XXXXXXXXXX formatida
 yuboring.`,
-        keyboard
+        await getUserKeyboard(
+          userId
+        )
       );
 
       return NextResponse.json({
@@ -1073,7 +1368,9 @@ yuboring.`,
       await sendTelegramMessage(
         chatId,
         "⚠️ Serverda xatolik yuz berdi. Birozdan keyin yana urinib ko‘ring.",
-        USED_USER_KEYBOARD
+        await getUserKeyboard(
+          userId
+        )
       );
 
       return NextResponse.json({
@@ -1081,18 +1378,15 @@ yuboring.`,
       });
     }
 
-    // CODE NOT FOUND
-
     if (!attempt) {
       await sendTelegramMessage(
         chatId,
         `❌ Premium kod topilmadi.
 
-Kodni qayta tekshirib yuboring.
-
-Masalan:
-AQL-3F8C2A91D4`,
-        USED_USER_KEYBOARD
+Kodni qayta tekshirib yuboring.`,
+        await getUserKeyboard(
+          userId
+        )
       );
 
       return NextResponse.json({
@@ -1117,7 +1411,9 @@ Telegram akkauntiga tegishli.
 Iltimos, testni ishlagan
 Telegram akkauntingizdan
 foydalaning.`,
-        USED_USER_KEYBOARD
+        await getUserKeyboard(
+          userId
+        )
       );
 
       return NextResponse.json({
@@ -1132,10 +1428,10 @@ foydalaning.`,
         chatId,
         `✅ Premium allaqachon faol!
 
-Endi batafsil natijangizni,
-sertifikatingizni va
-reytingdagi o‘rningizni
-ko‘rishingiz mumkin.`,
+Batafsil natijangiz,
+sertifikatingiz va
+reytingdagi o‘rningiz
+ochiq.`,
         PREMIUM_USER_KEYBOARD
       );
 
