@@ -62,71 +62,145 @@ export default function PremiumPage() {
   // =========================================================
 
   useEffect(() => {
-    async function loadPremiumResult() {
-      try {
-        const attemptId = localStorage.getItem("aqltest_attempt_id");
+  async function loadPremiumResult() {
+    try {
+      const attemptId =
+        localStorage.getItem("aqltest_attempt_id");
 
-        if (!attemptId) {
-          router.push("/result");
-          return;
-        }
-
+      // 1. Oldingi web sessiyadan attempt ID bo'lsa, avval shuni tekshiramiz
+      if (attemptId) {
         const response = await fetch(
           `/api/attempt/premium?id=${attemptId}`
         );
 
         const data = await response.json();
 
-        if (!response.ok || !data.success) {
-          console.error(
-            "Premium natija olinmadi:",
-            data
+        if (response.ok && data.success) {
+          const attempt = data.attempt;
+
+          setResult({
+            score: attempt.score,
+            total: attempt.total,
+            percentage: attempt.percentage,
+            weightedScore:
+              attempt.weightedScore ?? attempt.percentage,
+            timeUsed: attempt.timeUsed,
+            answers: attempt.answers,
+            certificateId:
+              attempt.certificateId ?? null,
+            shareUrl:
+              attempt.shareUrl ?? null,
+          });
+
+          setSections(data.sections ?? []);
+          setStrongestSection(
+            data.strongestSection ?? null
           );
 
-          router.push("/result");
           return;
         }
+      }
 
-        const attempt = data.attempt;
+      // 2. Telegram Mini App orqali kirilgan bo'lsa,
+      // Telegram initData bilan premium natijani olamiz
+      const telegram =
+        (window as any).Telegram?.WebApp;
 
-        setResult({
-          score: attempt.score,
-          total: attempt.total,
-          percentage: attempt.percentage,
-          weightedScore:
-            attempt.weightedScore ?? attempt.percentage,
-          timeUsed: attempt.timeUsed,
-          answers: attempt.answers,
-          certificateId: attempt.certificateId ?? null,
-          shareUrl: attempt.shareUrl ?? null,
-        });
+      const initData = telegram?.initData;
 
-        setSections(data.sections ?? []);
-
-        setStrongestSection(
-          data.strongestSection ?? null
-        );
-      } catch (error) {
+      if (!initData) {
         console.error(
-          "Premium natijani olishda xatolik:",
-          error
+          "Telegram initData topilmadi"
+        );
+        router.push("/result");
+        return;
+      }
+
+      const response = await fetch(
+        "/api/attempt/premium",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            telegramInitData: initData,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        console.error(
+          "Telegram premium natija olinmadi:",
+          data
         );
 
         router.push("/result");
-      } finally {
-        setLoading(false);
+        return;
       }
+
+      const attempt = data.attempt;
+
+      // Keyingi kirishlarda ishlatish uchun saqlaymiz
+      if (attempt.id) {
+        localStorage.setItem(
+          "aqltest_attempt_id",
+          attempt.id
+        );
+      }
+
+      setResult({
+        score: attempt.score,
+        total: attempt.total,
+        percentage: attempt.percentage,
+        weightedScore:
+          attempt.weightedScore ?? attempt.percentage,
+        timeUsed: attempt.timeUsed,
+        answers: attempt.answers,
+        certificateId:
+          attempt.certificateId ?? null,
+        shareUrl:
+          attempt.shareUrl ?? null,
+      });
+
+      setSections(data.sections ?? []);
+
+      setStrongestSection(
+        data.strongestSection ?? null
+      );
+    } catch (error) {
+      console.error(
+        "Premium natijani olishda xatolik:",
+        error
+      );
+
+      router.push("/result");
+    } finally {
+      setLoading(false);
     }
+  }
 
-    loadPremiumResult();
+  const telegram =
+    (window as any).Telegram?.WebApp;
 
-    const savedName =
-      localStorage.getItem("aqltest_name");
+  if (
+    telegram &&
+    typeof telegram.ready === "function"
+  ) {
+    telegram.ready();
+  }
 
-    if (savedName) {
-      setName(savedName);
-    }
-  }, [router]);
+  loadPremiumResult();
+
+  const savedName =
+    localStorage.getItem("aqltest_name");
+
+  if (savedName) {
+    setName(savedName);
+  }
+}, [router]);
 
   // =========================================================
   // LOADING
