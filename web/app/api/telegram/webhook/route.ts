@@ -1,14 +1,69 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/app/lib/supabaseAdmin";
 
+const MAIN_KEYBOARD = {
+  keyboard: [
+    [
+      {
+        text: "🧠 TESTNI BOSHLASH",
+        web_app: {
+          url: "https://aqltest.vercel.app/test",
+        },
+      },
+    ],
+    [
+      {
+        text: "💎 PREMIUM NATIJAM",
+        web_app: {
+          url: "https://aqltest.vercel.app/premium",
+        },
+      },
+      {
+        text: "🏆 REYTING",
+      },
+    ],
+    [
+      {
+        text: "📜 SERTIFIKAT",
+      },
+      {
+        text: "💰 TO‘LOV",
+      },
+    ],
+    [
+      {
+        text: "ℹ️ YORDAM",
+      },
+      {
+        text: "🌐 TIL",
+      },
+    ],
+  ],
+  resize_keyboard: true,
+  persistent: true,
+  input_field_placeholder: "Bo‘limni tanlang",
+};
+
 async function sendTelegramMessage(
   chatId: number,
-  text: string
+  text: string,
+  replyMarkup?: unknown
 ) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
 
   if (!botToken) {
-    throw new Error("TELEGRAM_BOT_TOKEN topilmadi.");
+    throw new Error(
+      "TELEGRAM_BOT_TOKEN topilmadi."
+    );
+  }
+
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    text,
+  };
+
+  if (replyMarkup) {
+    body.reply_markup = replyMarkup;
   }
 
   await fetch(
@@ -18,10 +73,7 @@ async function sendTelegramMessage(
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-      }),
+      body: JSON.stringify(body),
     }
   );
 }
@@ -48,17 +100,153 @@ export async function POST(request: Request) {
       });
     }
 
-    // /start
+    // =========================
+    // START
+    // =========================
+
     if (text === "/start") {
       await sendTelegramMessage(
         chatId,
-        "🧠 AqlTest premium\n\nPremium kodingizni shu yerga yuboring.\n\nMasalan:\nAQL-3F8C2A91D4"
+        `🧠 AqlTest'ga xush kelibsiz!
+
+Mantiqiy fikrlash qobiliyatingizni
+24 ta savol orqali sinab ko‘ring.
+
+⏱ 12 daqiqa
+🧩 6 ta yo‘nalish
+💎 Premium natija
+🏆 Reyting
+📜 Sertifikat
+
+Boshlash uchun:
+🧠 TESTNI BOSHLASH tugmasini bosing.`,
+        MAIN_KEYBOARD
       );
 
       return NextResponse.json({
         ok: true,
       });
     }
+
+    // =========================
+    // HELP
+    // =========================
+
+    if (text === "ℹ️ YORDAM") {
+      await sendTelegramMessage(
+        chatId,
+        `ℹ️ AqlTest haqida
+
+🧠 24 ta mantiqiy savol
+⏱ 12 daqiqalik test
+💎 Premium natija
+📜 Sertifikat
+🏆 Reyting
+
+Testni boshlash uchun
+🧠 TESTNI BOSHLASH tugmasini bosing.
+
+Premium kod bo‘lsa, uni shu chatga
+AQL-XXXXXXXXXX formatida yuborishingiz mumkin.`,
+        MAIN_KEYBOARD
+      );
+
+      return NextResponse.json({
+        ok: true,
+      });
+    }
+
+    // =========================
+    // LANGUAGE
+    // =========================
+
+    if (text === "🌐 TIL") {
+      await sendTelegramMessage(
+        chatId,
+        `🌐 Til
+
+Hozircha AqlTest o‘zbek tilida ishlaydi. 🇺🇿
+
+Boshqa tillar keyingi yangilanishlarda qo‘shiladi.`,
+        MAIN_KEYBOARD
+      );
+
+      return NextResponse.json({
+        ok: true,
+      });
+    }
+
+    // =========================
+    // RANKING
+    // =========================
+
+    if (text === "🏆 REYTING") {
+      await sendTelegramMessage(
+        chatId,
+        `🏆 AqlTest Reyting
+
+Reyting tizimi hozir tayyorlanmoqda.
+
+Premium foydalanuvchilar uchun
+eng yaxshi natijalar reytingi
+tez orada ishga tushadi.`,
+        MAIN_KEYBOARD
+      );
+
+      return NextResponse.json({
+        ok: true,
+      });
+    }
+
+    // =========================
+    // CERTIFICATE
+    // =========================
+
+    if (text === "📜 SERTIFIKAT") {
+      await sendTelegramMessage(
+        chatId,
+        `📜 Sertifikat
+
+Sertifikat premium natija bilan
+birga taqdim etiladi.
+
+Avval testni ishlab,
+premium natijani oching.`,
+        MAIN_KEYBOARD
+      );
+
+      return NextResponse.json({
+        ok: true,
+      });
+    }
+
+    // =========================
+    // PAYMENT
+    // =========================
+
+    if (text === "💰 TO‘LOV") {
+      await sendTelegramMessage(
+        chatId,
+        `💰 Premium
+
+Batafsil natija narxi:
+7 900 so‘m
+
+To‘lov tizimi hozir ulanmoqda.
+Click integratsiyasi tayyor bo‘lgach,
+shu bo‘lim orqali to‘lovni amalga oshirish
+mumkin bo‘ladi.`,
+        MAIN_KEYBOARD
+      );
+
+      return NextResponse.json({
+        ok: true,
+      });
+    }
+
+    // =========================
+    // PREMIUM CODE
+    // =========================
 
     if (!text) {
       return NextResponse.json({
@@ -66,21 +254,18 @@ export async function POST(request: Request) {
       });
     }
 
-    // Premium kod formatini tekshirish
     const code = text.toUpperCase();
 
     if (!/^AQL-[A-F0-9]{10}$/.test(code)) {
-      await sendTelegramMessage(
-        chatId,
-        "❌ Premium kod noto‘g‘ri formatda.\n\nKodni AQL-XXXXXXXXXX ko‘rinishida yuboring."
-      );
-
       return NextResponse.json({
         ok: true,
       });
     }
 
-    // Kodni Supabase'dan qidirish
+    // =========================
+    // FIND PREMIUM CODE
+    // =========================
+
     const { data: attempt, error } =
       await supabaseAdmin
         .from("attempts")
@@ -98,7 +283,8 @@ export async function POST(request: Request) {
 
       await sendTelegramMessage(
         chatId,
-        "⚠️ Serverda xatolik yuz berdi. Birozdan keyin yana urinib ko‘ring."
+        "⚠️ Serverda xatolik yuz berdi. Birozdan keyin yana urinib ko‘ring.",
+        MAIN_KEYBOARD
       );
 
       return NextResponse.json({
@@ -109,7 +295,8 @@ export async function POST(request: Request) {
     if (!attempt) {
       await sendTelegramMessage(
         chatId,
-        "❌ Bunday premium kod topilmadi.\n\nKodni qayta tekshirib yuboring."
+        "❌ Bunday premium kod topilmadi.\n\nKodni qayta tekshirib yuboring.",
+        MAIN_KEYBOARD
       );
 
       return NextResponse.json({
@@ -117,7 +304,10 @@ export async function POST(request: Request) {
       });
     }
 
-    // Kod boshqa Telegram akkauntiga tegishli bo‘lsa
+    // =========================
+    // TELEGRAM USER CHECK
+    // =========================
+
     if (
       attempt.telegram_user_id !== null &&
       Number(attempt.telegram_user_id) !==
@@ -125,7 +315,8 @@ export async function POST(request: Request) {
     ) {
       await sendTelegramMessage(
         chatId,
-        "❌ Bu premium kod boshqa Telegram akkauntiga tegishli."
+        "❌ Bu premium kod boshqa Telegram akkauntiga tegishli.",
+        MAIN_KEYBOARD
       );
 
       return NextResponse.json({
@@ -133,11 +324,15 @@ export async function POST(request: Request) {
       });
     }
 
-    // Premium allaqachon ochilgan bo‘lsa
+    // =========================
+    // ALREADY PREMIUM
+    // =========================
+
     if (attempt.is_premium) {
       await sendTelegramMessage(
         chatId,
-        "✅ Bu premium kod allaqachon faollashtirilgan."
+        "✅ Bu premium kod allaqachon faollashtirilgan.",
+        MAIN_KEYBOARD
       );
 
       return NextResponse.json({
@@ -145,10 +340,24 @@ export async function POST(request: Request) {
       });
     }
 
-    // Hozircha TO‘LOVNI ochmaymiz.
+    // =========================
+    // PAYMENT WAITING
+    // =========================
+
     await sendTelegramMessage(
       chatId,
-      `✅ Premium kod topildi!\n\nKod: ${code}\n\n💳 To‘lov holati: kutilmoqda.\n\nTo‘lov tizimi ulanmaganligi sababli premium hali ochilmadi.`
+      `✅ Premium kod topildi!
+
+Kod: ${code}
+
+💳 To‘lov holati: kutilmoqda.
+
+To‘lov tizimi ulanmagani sababli
+premium hali ochilmadi.
+
+To‘lov tasdiqlangach premium
+avtomatik faollashtiriladi.`,
+      MAIN_KEYBOARD
     );
 
     return NextResponse.json({
