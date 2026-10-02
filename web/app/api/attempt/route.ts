@@ -96,11 +96,16 @@ export async function POST(request: Request) {
     }
 
     const total = answerKey.length;
+
     const percentage = Math.round(
       (score / total) * 100
     );
 
     const attemptId = crypto.randomUUID();
+
+    // Noyob premium kod
+    const premiumCode =
+      `AQL-${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
 
     const { error } = await supabase
       .from("attempts")
@@ -112,35 +117,38 @@ export async function POST(request: Request) {
         time_used: timeUsed,
         answers,
         telegram_user_id: telegramUserId,
+        premium_code: premiumCode,
       });
 
     if (error) {
-  console.error("Supabase error:", error);
+      console.error("Supabase error:", error);
 
-  if (
-    error.code === "23505" &&
-    telegramUserId !== null
-  ) {
-    return NextResponse.json(
-      {
-        error:
-          "Siz bepul testni allaqachon ishlab bo‘lgansiz.",
-      },
-      { status: 409 }
-    );
-  }
+      if (
+        error.code === "23505" &&
+        telegramUserId !== null
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Siz bepul testni allaqachon ishlab bo‘lgansiz.",
+          },
+          { status: 409 }
+        );
+      }
 
-  return NextResponse.json(
-    {
-      error: "Natijani saqlashda xatolik.",
-    },
-    { status: 500 }
-  );
-}
+      return NextResponse.json(
+        {
+          error:
+            "Natijani saqlashda xatolik.",
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
       attemptId,
+      premiumCode,
       score,
       total,
       percentage,
