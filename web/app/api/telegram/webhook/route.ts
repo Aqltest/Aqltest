@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     if (text === "/start") {
       await sendTelegramMessage(
         chatId,
-        "🧠 AqlTest premium\n\nPremium kodingizni shu yerga yuboring.\n\nMasalan:\nAQL-ABC1234567"
+        "🧠 AqlTest premium\n\nPremium kodingizni shu yerga yuboring.\n\nMasalan:\nAQL-3F8C2A91D4"
       );
 
       return NextResponse.json({
