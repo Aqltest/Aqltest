@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     }
 
     let telegramUserId: number | null = null;
-
+    let displayName: string | null = null;
     if (telegramInitData) {
       const telegramUser = validateTelegramInitData(
         telegramInitData
@@ -85,6 +85,12 @@ export async function POST(request: Request) {
       }
 
       telegramUserId = telegramUser.id;
+      displayName = [
+  telegramUser.first_name,
+  telegramUser.last_name,
+]
+  .filter(Boolean)
+  .join(" ");
     }
 
     const questionWeights = [
@@ -120,16 +126,16 @@ const percentage = weightedScore;
     const { error } = await supabase
       .from("attempts")
       .insert({
-        id: attemptId,
-        score,
-        total,
-        percentage,
-        weighted_score: weightedScore,
-        time_used: timeUsed,
-        answers,
-        telegram_user_id: telegramUserId,
-        premium_code: premiumCode,
-      });
+  id: attemptId,
+  score,
+  total,
+  percentage,
+  time_used: timeUsed,
+  answers,
+  telegram_user_id: telegramUserId,
+  display_name: displayName,
+  premium_code: premiumCode,
+})
 
     if (error) {
       console.error("Supabase error:", error);
