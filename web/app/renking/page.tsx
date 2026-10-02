@@ -9,11 +9,33 @@ type RankingUser = {
   score: number;
 };
 
+type RankingResponse = {
+  success: boolean;
+  totalUsers: number;
+  ranking: RankingUser[];
+  myRank?: number | null;
+  myScore?: number | null;
+  myDisplayName?: string | null;
+  error?: string;
+};
+
 export default function RankingPage() {
   const router = useRouter();
 
   const [ranking, setRanking] =
     useState<RankingUser[]>([]);
+
+  const [myRank, setMyRank] =
+    useState<number | null>(null);
+
+  const [myScore, setMyScore] =
+    useState<number | null>(null);
+
+  const [myDisplayName, setMyDisplayName] =
+    useState<string | null>(null);
+
+  const [totalUsers, setTotalUsers] =
+    useState(0);
 
   const [loading, setLoading] =
     useState(true);
@@ -24,13 +46,47 @@ export default function RankingPage() {
   useEffect(() => {
     async function loadRanking() {
       try {
-        const response = await fetch(
-          "/api/ranking"
-        );
+        const webApp =
+          window.Telegram?.WebApp;
 
-        const data = await response.json();
+        if (webApp) {
+          webApp.ready();
+        }
 
-        if (!response.ok || !data.success) {
+        const initData =
+          webApp?.initData || "";
+
+        let response: Response;
+
+        // Telegram ichidan ochilgan bo‘lsa,
+        // foydalanuvchining o‘z reytingini ham olamiz.
+        if (initData) {
+          response = await fetch(
+            "/api/ranking",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+              body: JSON.stringify({
+                initData,
+              }),
+            }
+          );
+        } else {
+          response = await fetch(
+            "/api/ranking"
+          );
+        }
+
+        const data: RankingResponse =
+          await response.json();
+
+        if (
+          !response.ok ||
+          !data.success
+        ) {
           setError(
             data.error ||
               "Reytingni yuklashda xatolik yuz berdi."
@@ -40,6 +96,21 @@ export default function RankingPage() {
         }
 
         setRanking(data.ranking ?? []);
+        setTotalUsers(
+          data.totalUsers ?? 0
+        );
+
+        setMyRank(
+          data.myRank ?? null
+        );
+
+        setMyScore(
+          data.myScore ?? null
+        );
+
+        setMyDisplayName(
+          data.myDisplayName ?? null
+        );
       } catch (error) {
         console.error(
           "Ranking load error:",
@@ -148,6 +219,68 @@ export default function RankingPage() {
         </div>
 
         {/* =========================
+            MY POSITION
+        ========================= */}
+
+        {myRank !== null && (
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4 mb-5">
+
+            <div className="text-blue-400 text-xs font-bold uppercase tracking-wide">
+              👤 Sizning natijangiz
+            </div>
+
+            <div className="flex items-center gap-3 mt-3">
+
+              <div className="w-14 h-14 rounded-xl bg-slate-900 flex items-center justify-center text-2xl font-bold">
+                #{myRank}
+              </div>
+
+              <div className="flex-1 min-w-0">
+
+                <div className="font-bold truncate">
+                  {myDisplayName ||
+                    "Siz"}
+                </div>
+
+                <div className="text-slate-400 text-xs mt-1">
+                  Reytingdagi o‘rningiz
+                </div>
+
+              </div>
+
+              <div className="text-right">
+
+                <div className="text-blue-400 text-xl font-bold">
+                  {myScore}
+                </div>
+
+                <div className="text-[10px] text-slate-500">
+                  Score
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
+        {myRank === null && (
+          <div className="bg-slate-900 rounded-2xl p-4 mb-5">
+
+            <div className="text-sm font-semibold">
+              👤 Siz hali reytingda emassiz
+            </div>
+
+            <p className="text-slate-400 text-xs mt-1.5 leading-relaxed">
+              Reytingga kirish uchun premium
+              natijaga ega bo‘lishingiz kerak.
+            </p>
+
+          </div>
+        )}
+
+        {/* =========================
             EMPTY
         ========================= */}
 
@@ -164,7 +297,8 @@ export default function RankingPage() {
 
             <p className="text-slate-400 text-sm mt-2">
               Premium natijalardan keyin
-              foydalanuvchilar shu yerda ko‘rinadi.
+              foydalanuvchilar shu yerda
+              ko‘rinadi.
             </p>
 
           </div>
@@ -259,7 +393,7 @@ export default function RankingPage() {
                 </h2>
 
                 <span className="text-xs text-slate-500">
-                  {ranking.length} ta
+                  {totalUsers} ta
                 </span>
 
               </div>
@@ -267,6 +401,9 @@ export default function RankingPage() {
               <div className="space-y-1.5">
 
                 {ranking.map((user) => {
+
+                  const isMe =
+                    myRank === user.rank;
 
                   const isTopThree =
                     user.rank <= 3;
@@ -278,7 +415,9 @@ export default function RankingPage() {
                         flex items-center gap-3
                         rounded-xl px-3 py-2.5
                         ${
-                          isTopThree
+                          isMe
+                            ? "bg-blue-500/15 border border-blue-500/30"
+                            : isTopThree
                             ? "bg-slate-800"
                             : "bg-slate-950/50"
                         }
@@ -301,6 +440,12 @@ export default function RankingPage() {
 
                         <div className="font-semibold text-sm truncate">
                           {user.displayName}
+
+                          {isMe && (
+                            <span className="text-blue-400 text-[10px] ml-2">
+                              Siz
+                            </span>
+                          )}
                         </div>
 
                       </div>
