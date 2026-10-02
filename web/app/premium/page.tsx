@@ -317,60 +317,59 @@ export default function PremiumPage() {
 
         {/* SECTION RESULTS */}
 
-        <div className="mb-6">
+<div className="mb-5 sm:mb-6">
 
-          <h2 className="font-bold text-lg mb-4">
-            📊 Yo'nalishlar bo'yicha natija
-          </h2>
+  <h2 className="font-bold text-base sm:text-lg mb-3">
+    📊 Yo'nalishlar bo'yicha natija
+  </h2>
 
-          <div className="space-y-3">
+  <div className="space-y-2">
 
-            {sections.map((section) => {
+    {sections.map((section) => {
+      return (
+        <div
+          key={section.name}
+          className="bg-slate-800 rounded-lg sm:rounded-xl px-3 py-2.5 sm:px-4 sm:py-3"
+        >
 
-              return (
-                <div
-                  key={section.name}
-                  className="bg-slate-800 rounded-xl p-4"
-                >
+          <div className="flex justify-between items-center mb-1.5">
 
-                  <div className="flex justify-between items-center mb-2">
+            <div className="flex items-center gap-2 min-w-0">
 
-                    <div className="flex items-center gap-2">
+              <span className="text-lg sm:text-xl shrink-0">
+                {section.icon}
+              </span>
 
-                      <span>
-                        {section.icon}
-                      </span>
+              <span className="font-semibold text-sm sm:text-base truncate">
+                {section.name}
+              </span>
 
-                      <span className="font-semibold">
-                        {section.name}
-                      </span>
+            </div>
 
-                    </div>
+            <span className="text-xs sm:text-sm font-bold ml-2 shrink-0">
+              {section.score}/{section.total}
+            </span>
 
-                    <span className="text-sm font-bold">
-                      {section.score}/{section.total}
-                    </span>
+          </div>
 
-                  </div>
+          <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
 
-                  <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
-
-                    <div
-                      className="h-full bg-blue-500 transition-all"
-                      style={{
-                        width: `${section.percentage}%`,
-                      }}
-                    />
-
-                  </div>
-
-                </div>
-              );
-            })}
+            <div
+              className="h-full bg-blue-500 transition-all"
+              style={{
+                width: `${section.percentage}%`,
+              }}
+            />
 
           </div>
 
         </div>
+      );
+    })}
+
+  </div>
+
+</div>
 
         {/* STRONGEST SECTION */}
 

@@ -14,15 +14,19 @@ type ResultData = {
 export default function ResultPage() {
   const router = useRouter();
 
-  const [result, setResult] = useState<ResultData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [result, setResult] =
+    useState<ResultData | null>(null);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
     async function loadResult() {
       try {
-        const attemptId = localStorage.getItem(
-          "aqltest_attempt_id"
-        );
+        const attemptId =
+          localStorage.getItem(
+            "aqltest_attempt_id"
+          );
 
         if (!attemptId) {
           setResult(null);
@@ -37,7 +41,11 @@ export default function ResultPage() {
         const data = await response.json();
 
         if (!response.ok || !data.success) {
-          console.error("Natija olinmadi:", data);
+          console.error(
+            "Natija olinmadi:",
+            data
+          );
+
           setResult(null);
           setLoading(false);
           return;
@@ -73,17 +81,21 @@ export default function ResultPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-950 text-white p-3 sm:p-4 md:p-6">
+      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="text-5xl mb-5">🧠</div>
 
-          <h1 className="text-2xl font-bold">
+          <div className="text-4xl mb-3">
+            🧠
+          </div>
+
+          <h1 className="text-xl sm:text-2xl font-bold">
             Natija yuklanmoqda...
           </h1>
 
-          <p className="text-slate-400 mt-2">
+          <p className="text-slate-400 text-sm mt-2">
             Natijangiz serverdan olinmoqda.
           </p>
+
         </div>
       </main>
     );
@@ -95,30 +107,36 @@ export default function ResultPage() {
 
   if (!result) {
     return (
-      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
+      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="text-6xl mb-5">
+
+          <div className="text-5xl mb-4">
             🧠
           </div>
 
-          <h1 className="text-2xl font-bold mb-3">
+          <h1 className="text-xl sm:text-2xl font-bold mb-2">
             Natija topilmadi
           </h1>
 
-          <p className="text-slate-400 mb-6">
+          <p className="text-slate-400 text-sm mb-5">
             Avval IQ testni ishlab ko‘ring.
           </p>
 
           <button
             onClick={() => router.push("/test")}
-            className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-bold transition"
+            className="bg-blue-600 hover:bg-blue-700 px-5 py-3 rounded-xl font-bold text-sm transition"
           >
             IQ TESTNI BOSHLASH
           </button>
+
         </div>
       </main>
     );
   }
+
+  // =========================
+  // TIME
+  // =========================
 
   const minutes = Math.floor(
     result.timeUsed / 60
@@ -127,72 +145,74 @@ export default function ResultPage() {
   const seconds = result.timeUsed % 60;
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white p-4 md:p-6">
+    <main className="min-h-screen bg-slate-950 text-white px-2.5 py-4 sm:px-4 sm:py-6">
 
-      <div className="w-full max-w-lg mx-auto py-3 sm:py-6 md:py-10">
+      <div className="w-full max-w-lg mx-auto">
 
-        <div className="bg-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl">
+        <div className="bg-slate-900 rounded-2xl sm:rounded-3xl p-3 sm:p-5 md:p-7 shadow-2xl">
 
-          {/* HEADER */}
+          {/* =========================
+              HEADER
+          ========================= */}
 
-           <div className="text-center mb-5 sm:mb-8">
+          <div className="text-center mb-5 sm:mb-6">
 
-            <div className="text-4xl sm:text-5xl md:text-6xl mb-2 sm:mb-4">
-  🧠
-</div>
+            <div className="text-4xl sm:text-5xl mb-2">
+              🧠
+            </div>
 
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">
-               Test yakunlandi!
+            <h1 className="text-2xl sm:text-3xl font-bold">
+              Test yakunlandi!
             </h1>
 
-            <p className="text-slate-400 mt-3">
+            <p className="text-slate-400 text-sm mt-1.5">
               Natijangiz tayyor.
             </p>
 
           </div>
 
-          {/* MAIN RESULT */}
+          {/* =========================
+              MAIN RESULT
+          ========================= */}
 
-          <div className="bg-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-7 text-center mb-4 sm:mb-5">
+          <div className="bg-slate-800 rounded-2xl p-4 sm:p-5 text-center mb-3">
 
-            <div className="text-slate-400 text-sm mb-2">
+            <div className="text-slate-400 text-xs sm:text-sm">
               Umumiy natijangiz
             </div>
 
-            <div className="text-5xl sm:text-6xl font-bold text-blue-400">
-  {result.percentage}%
-</div>
-
-            <div className="text-slate-300 mt-3">
-              {result.score} / {result.total} ta to‘g‘ri javob
+            <div className="text-5xl sm:text-6xl font-bold text-blue-400 mt-1">
+              {result.percentage}%
             </div>
 
           </div>
 
-          {/* QUICK STATS */}
+          {/* =========================
+              QUICK STATS
+          ========================= */}
 
-          <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <div className="grid grid-cols-2 gap-2 mb-4">
 
-            <div className="bg-slate-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center">
+            <div className="bg-slate-800 rounded-xl px-3 py-3 text-center">
 
-              <div className="text-slate-400 text-sm">
+              <div className="text-slate-400 text-[11px] sm:text-xs">
                 Sarflangan vaqt
               </div>
 
-              <div className="text-xl font-bold mt-1">
+              <div className="text-lg font-bold mt-0.5">
                 {minutes}:
                 {String(seconds).padStart(2, "0")}
               </div>
 
             </div>
 
-            <div className="bg-slate-800 rounded-2xl p-4 text-center">
+            <div className="bg-slate-800 rounded-xl px-3 py-3 text-center">
 
-              <div className="text-slate-400 text-sm">
+              <div className="text-slate-400 text-[11px] sm:text-xs">
                 Savollar
               </div>
 
-              <div className="text-xl font-bold mt-1">
+              <div className="text-lg font-bold mt-0.5">
                 {result.total}
               </div>
 
@@ -200,177 +220,266 @@ export default function ResultPage() {
 
           </div>
 
-          {/* SHORT PREVIEW */}
+          {/* =========================
+              SHORT PREVIEW
+          ========================= */}
 
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6">
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-3.5 py-3.5 mb-4">
 
-            <div className="text-blue-400 text-sm font-semibold mb-2">
+            <div className="text-blue-400 text-xs font-semibold mb-1.5">
               NATIJANGIZ HAQIDA
             </div>
 
-            <p className="text-slate-300 leading-relaxed">
-              Siz testdagi {result.total} ta savolning{" "}
-              <span className="font-bold text-white">
-                {result.score} tasiga
-              </span>{" "}
-              to‘g‘ri javob berdingiz.
-            </p>
-
-            <p className="text-slate-400 text-sm mt-3">
-              Batafsil tahlilda natijangizning turli
-              yo‘nalishlar bo‘yicha qanday taqsimlanganini
-              ko‘rishingiz mumkin.
+            <p className="text-slate-300 text-sm leading-relaxed">
+              Test natijangiz tayyor.
+              Batafsil tahlilda natijangizning
+              turli yo‘nalishlar bo‘yicha
+              taqsimlanishini ko‘rishingiz mumkin.
             </p>
 
           </div>
 
-          {/* LOCKED ANALYSIS */}
+          {/* =========================
+              LOCKED ANALYSIS
+          ========================= */}
 
-          <div className="mb-5 sm:mb-7">
+          <div className="mb-5">
 
-            <h2 className="text-xl font-bold mb-4">
+            <h2 className="text-base sm:text-lg font-bold mb-2.5">
               🔒 Batafsil tahlil
             </h2>
 
-            <div className="space-y-3">
+            <div className="space-y-1.5">
 
-              <div className="bg-slate-800 rounded-xl sm:rounded-2xl p-3 sm:p-4">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">🧮</div>
+              {/* SONLI */}
 
-                  <div className="flex-1">
-                    <div className="font-semibold">
+              <div className="bg-slate-800 rounded-lg px-3 py-2.5">
+
+                <div className="flex items-center gap-2">
+
+                  <span className="text-lg">
+                    🧮
+                  </span>
+
+                  <div className="flex-1 min-w-0">
+
+                    <div className="font-semibold text-xs sm:text-sm">
                       Sonli mantiq
                     </div>
 
-                    <div className="text-sm text-slate-500">
+                    <div className="text-[10px] sm:text-xs text-slate-500">
                       Natija yopilgan
                     </div>
+
                   </div>
 
-                  <div className="text-xl">🔒</div>
+                  <span className="text-sm">
+                    🔒
+                  </span>
+
                 </div>
+
               </div>
 
-              <div className="bg-slate-800 rounded-2xl p-4">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">🧩</div>
+              {/* VIZUAL */}
 
-                  <div className="flex-1">
-                    <div className="font-semibold">
+              <div className="bg-slate-800 rounded-lg px-3 py-2.5">
+
+                <div className="flex items-center gap-2">
+
+                  <span className="text-lg">
+                    🧩
+                  </span>
+
+                  <div className="flex-1 min-w-0">
+
+                    <div className="font-semibold text-xs sm:text-sm">
                       Vizual mantiq
                     </div>
 
-                    <div className="text-sm text-slate-500">
+                    <div className="text-[10px] sm:text-xs text-slate-500">
                       Natija yopilgan
                     </div>
+
                   </div>
 
-                  <div className="text-xl">🔒</div>
+                  <span className="text-sm">
+                    🔒
+                  </span>
+
                 </div>
+
               </div>
 
-              <div className="bg-slate-800 rounded-2xl p-4">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">🔗</div>
+              {/* ANALOGIYA */}
 
-                  <div className="flex-1">
-                    <div className="font-semibold">
+              <div className="bg-slate-800 rounded-lg px-3 py-2.5">
+
+                <div className="flex items-center gap-2">
+
+                  <span className="text-lg">
+                    🔗
+                  </span>
+
+                  <div className="flex-1 min-w-0">
+
+                    <div className="font-semibold text-xs sm:text-sm">
                       Analogiya
                     </div>
 
-                    <div className="text-sm text-slate-500">
+                    <div className="text-[10px] sm:text-xs text-slate-500">
                       Natija yopilgan
                     </div>
+
                   </div>
 
-                  <div className="text-xl">🔒</div>
+                  <span className="text-sm">
+                    🔒
+                  </span>
+
                 </div>
+
               </div>
 
-              <div className="bg-slate-800 rounded-2xl p-4">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">🧠</div>
+              {/* MANTIQIY XULOSA */}
 
-                  <div className="flex-1">
-                    <div className="font-semibold">
+              <div className="bg-slate-800 rounded-lg px-3 py-2.5">
+
+                <div className="flex items-center gap-2">
+
+                  <span className="text-lg">
+                    🧠
+                  </span>
+
+                  <div className="flex-1 min-w-0">
+
+                    <div className="font-semibold text-xs sm:text-sm">
                       Mantiqiy xulosa
                     </div>
 
-                    <div className="text-sm text-slate-500">
+                    <div className="text-[10px] sm:text-xs text-slate-500">
                       Natija yopilgan
                     </div>
+
                   </div>
 
-                  <div className="text-xl">🔒</div>
+                  <span className="text-sm">
+                    🔒
+                  </span>
+
                 </div>
+
               </div>
 
-              <div className="bg-slate-800 rounded-2xl p-4">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">📈</div>
+              {/* MURAKKAB KETMA-KETLIK */}
 
-                  <div className="flex-1">
-                    <div className="font-semibold">
+              <div className="bg-slate-800 rounded-lg px-3 py-2.5">
+
+                <div className="flex items-center gap-2">
+
+                  <span className="text-lg">
+                    📈
+                  </span>
+
+                  <div className="flex-1 min-w-0">
+
+                    <div className="font-semibold text-xs sm:text-sm">
                       Murakkab ketma-ketlik
                     </div>
 
-                    <div className="text-sm text-slate-500">
+                    <div className="text-[10px] sm:text-xs text-slate-500">
                       Natija yopilgan
                     </div>
+
                   </div>
 
-                  <div className="text-xl">🔒</div>
+                  <span className="text-sm">
+                    🔒
+                  </span>
+
                 </div>
+
+              </div>
+
+              {/* ADVANCED VIZUAL */}
+
+              <div className="bg-slate-800 rounded-lg px-3 py-2.5">
+
+                <div className="flex items-center gap-2">
+
+                  <span className="text-lg">
+                    🔷
+                  </span>
+
+                  <div className="flex-1 min-w-0">
+
+                    <div className="font-semibold text-xs sm:text-sm">
+                      Advanced vizual
+                    </div>
+
+                    <div className="text-[10px] sm:text-xs text-slate-500">
+                      Natija yopilgan
+                    </div>
+
+                  </div>
+
+                  <span className="text-sm">
+                    🔒
+                  </span>
+
+                </div>
+
               </div>
 
             </div>
 
           </div>
 
-          {/* PREMIUM VALUE */}
+          {/* =========================
+              PREMIUM VALUE
+          ========================= */}
 
-          <div className="bg-slate-800/70 rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-4 sm:mb-6">
+          <div className="bg-slate-800/70 rounded-2xl p-4 sm:p-5 mb-4">
 
-            <div className="text-blue-400 text-sm font-bold mb-2">
+            <div className="text-blue-400 text-xs font-bold mb-1.5">
               PREMIUM NATIJA
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-5">
+            <h2 className="text-lg sm:text-xl font-bold mb-3">
               Natijangizni to‘liq oching
             </h2>
 
-            <div className="space-y-4 text-slate-300">
+            <div className="space-y-2 text-slate-300 text-xs sm:text-sm">
 
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <span>✓</span>
                 <span>
                   6 ta yo‘nalish bo‘yicha batafsil natija
                 </span>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <span>✓</span>
                 <span>
                   Qaysi yo‘nalishda kuchli ekaningiz
                 </span>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <span>✓</span>
                 <span>
                   Platforma ishtirokchilari orasidagi percentile
                 </span>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <span>✓</span>
                 <span>
                   Xato qilingan savollar bo‘yicha tahlil
                 </span>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <span>✓</span>
                 <span>
                   Natijani ulashish uchun maxsus karta
@@ -381,43 +490,50 @@ export default function ResultPage() {
 
           </div>
 
-          {/* PRICE */}
+          {/* =========================
+              PRICE
+          ========================= */}
 
-          <div className="text-center mb-5">
+          <div className="text-center mb-3.5">
 
-            <div className="text-slate-400 text-sm">
+            <div className="text-slate-400 text-xs">
               Batafsil natijani ochish
             </div>
 
-            <div className="text-3xl sm:text-4xl font-bold mt-1">
-               7 900 so‘m
+            <div className="text-3xl font-bold mt-0.5">
+              7 900 so‘m
             </div>
 
-            <div className="text-slate-500 text-sm mt-2">
+            <div className="text-slate-500 text-[11px] mt-1">
               Bir martalik to‘lov
             </div>
 
           </div>
 
-          {/* PAYMENT BUTTON */}
+          {/* =========================
+              PAYMENT BUTTON
+          ========================= */}
 
           <button
             onClick={() => router.push("/premium")}
-            className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 py-4 rounded-xl font-bold text-lg transition"
+            className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 py-3.5 rounded-xl font-bold text-sm sm:text-base transition"
           >
             🔓 Batafsil natijani ochish
           </button>
 
-          {/* RETEST */}
+          {/* =========================
+              RETEST
+          ========================= */}
 
           <button
             onClick={() => router.push("/test")}
-            className="w-full mt-4 text-slate-400 hover:text-white py-3 transition"
+            className="w-full mt-2 text-slate-400 hover:text-white py-2.5 transition text-xs sm:text-sm"
           >
             ↻ Testni qayta ishlash
           </button>
 
         </div>
+
       </div>
     </main>
   );
