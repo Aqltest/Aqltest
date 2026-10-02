@@ -73,7 +73,7 @@ export default function ResultPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
+      <main className="min-h-screen bg-slate-950 text-white p-3 sm:p-4 md:p-6">
         <div className="text-center">
           <div className="text-5xl mb-5">🧠</div>
 
@@ -129,20 +129,20 @@ export default function ResultPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 md:p-6">
 
-      <div className="w-full max-w-lg mx-auto py-6 md:py-10">
+      <div className="w-full max-w-lg mx-auto py-3 sm:py-6 md:py-10">
 
-        <div className="bg-slate-900 rounded-3xl p-6 md:p-8 shadow-2xl">
+        <div className="bg-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl">
 
           {/* HEADER */}
 
-          <div className="text-center mb-8">
+           <div className="text-center mb-5 sm:mb-8">
 
-            <div className="text-6xl mb-4">
-              🧠
-            </div>
+            <div className="text-4xl sm:text-5xl md:text-6xl mb-2 sm:mb-4">
+  🧠
+</div>
 
-            <h1 className="text-3xl md:text-4xl font-bold">
-              Test yakunlandi!
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">
+               Test yakunlandi!
             </h1>
 
             <p className="text-slate-400 mt-3">
@@ -153,15 +153,15 @@ export default function ResultPage() {
 
           {/* MAIN RESULT */}
 
-          <div className="bg-slate-800 rounded-3xl p-7 text-center mb-5">
+          <div className="bg-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-7 text-center mb-4 sm:mb-5">
 
             <div className="text-slate-400 text-sm mb-2">
               Umumiy natijangiz
             </div>
 
-            <div className="text-6xl font-bold text-blue-400">
-              {result.percentage}%
-            </div>
+            <div className="text-5xl sm:text-6xl font-bold text-blue-400">
+  {result.percentage}%
+</div>
 
             <div className="text-slate-300 mt-3">
               {result.score} / {result.total} ta to‘g‘ri javob
@@ -171,9 +171,9 @@ export default function ResultPage() {
 
           {/* QUICK STATS */}
 
-          <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
 
-            <div className="bg-slate-800 rounded-2xl p-4 text-center">
+            <div className="bg-slate-800 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center">
 
               <div className="text-slate-400 text-sm">
                 Sarflangan vaqt
@@ -202,7 +202,7 @@ export default function ResultPage() {
 
           {/* SHORT PREVIEW */}
 
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-5 mb-6">
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6">
 
             <div className="text-blue-400 text-sm font-semibold mb-2">
               NATIJANGIZ HAQIDA
@@ -226,7 +226,7 @@ export default function ResultPage() {
 
           {/* LOCKED ANALYSIS */}
 
-          <div className="mb-7">
+          <div className="mb-5 sm:mb-7">
 
             <h2 className="text-xl font-bold mb-4">
               🔒 Batafsil tahlil
@@ -234,7 +234,7 @@ export default function ResultPage() {
 
             <div className="space-y-3">
 
-              <div className="bg-slate-800 rounded-2xl p-4">
+              <div className="bg-slate-800 rounded-xl sm:rounded-2xl p-3 sm:p-4">
                 <div className="flex items-center gap-3">
                   <div className="text-2xl">🧮</div>
 
@@ -330,13 +330,13 @@ export default function ResultPage() {
 
           {/* PREMIUM VALUE */}
 
-          <div className="bg-slate-800/70 rounded-3xl p-6 mb-6">
+          <div className="bg-slate-800/70 rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-4 sm:mb-6">
 
             <div className="text-blue-400 text-sm font-bold mb-2">
               PREMIUM NATIJA
             </div>
 
-            <h2 className="text-2xl font-bold mb-5">
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-5">
               Natijangizni to‘liq oching
             </h2>
 
@@ -345,7 +345,7 @@ export default function ResultPage() {
               <div className="flex gap-3">
                 <span>✓</span>
                 <span>
-                  5 ta yo‘nalish bo‘yicha batafsil natija
+                  6 ta yo‘nalish bo‘yicha batafsil natija
                 </span>
               </div>
 
@@ -389,8 +389,8 @@ export default function ResultPage() {
               Batafsil natijani ochish
             </div>
 
-            <div className="text-4xl font-bold mt-1">
-              7 900 so‘m
+            <div className="text-3xl sm:text-4xl font-bold mt-1">
+               7 900 so‘m
             </div>
 
             <div className="text-slate-500 text-sm mt-2">

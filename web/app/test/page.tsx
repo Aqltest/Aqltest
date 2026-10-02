@@ -33,7 +33,6 @@ export default function TestPage() {
   // =========================
   // TIMER
   // =========================
-
   useEffect(() => {
     if (finished) return;
 
@@ -52,7 +51,6 @@ export default function TestPage() {
   // =========================
   // FORMAT TIME
   // =========================
-
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
@@ -63,7 +61,6 @@ export default function TestPage() {
   // =========================
   // FINISH TEST
   // =========================
-
   async function finishTest(
     currentAnswer: string | null = selectedAnswer
   ) {
@@ -85,7 +82,6 @@ export default function TestPage() {
     // SERVER
     // Ball server tomonidan hisoblanadi
     // =========================
-
     try {
       const response = await fetch("/api/attempt", {
         method: "POST",
@@ -125,7 +121,6 @@ export default function TestPage() {
       // =========================
       // FAQAT UI COMPATIBILITY
       // =========================
-
       localStorage.setItem(
         "aqltest_result",
         JSON.stringify({
@@ -151,7 +146,6 @@ export default function TestPage() {
   // =========================
   // NEXT QUESTION
   // =========================
-
   function handleNext() {
     if (!selectedAnswer) return;
 
@@ -180,7 +174,6 @@ export default function TestPage() {
   // =========================
   // OPTION LABEL
   // =========================
-
   function getOptionLabel(
     option:
       | string
@@ -199,7 +192,6 @@ export default function TestPage() {
   // =========================
   // OPTION TEXT
   // =========================
-
   function getOptionText(
     option:
       | string
@@ -218,7 +210,6 @@ export default function TestPage() {
   // =========================
   // OPTION IMAGE
   // =========================
-
   function getOptionImage(
     option:
       | string
@@ -237,7 +228,6 @@ export default function TestPage() {
   // =========================
   // PROGRESS
   // =========================
-
   const progress =
     ((currentQuestion + 1) /
       questions.length) *
@@ -246,21 +236,18 @@ export default function TestPage() {
   // =========================
   // UI
   // =========================
-
   return (
-    <main className="min-h-screen bg-slate-950 text-white px-4 py-6">
+    <main className="min-h-screen bg-slate-950 text-white px-3 py-4 sm:px-4 sm:py-6">
       <div className="max-w-3xl mx-auto">
 
         {/* HEADER */}
-
-        <div className="flex items-center justify-between mb-4">
-
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div>
-            <p className="text-sm text-slate-400">
+            <p className="text-xs sm:text-sm text-slate-400">
               Savol
             </p>
 
-            <p className="text-xl font-bold">
+            <p className="text-lg sm:text-xl font-bold">
               {currentQuestion + 1}
 
               <span className="text-slate-500">
@@ -271,7 +258,7 @@ export default function TestPage() {
           </div>
 
           <div
-            className={`px-4 py-2 rounded-xl font-bold ${
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl font-bold text-sm sm:text-base ${
               timeLeft <= 60
                 ? "bg-red-500/20 text-red-400"
                 : "bg-slate-800 text-blue-400"
@@ -279,58 +266,48 @@ export default function TestPage() {
           >
             ⏱️ {formattedTime}
           </div>
-
         </div>
 
         {/* DEBUG INDICATOR */}
-
         {DEBUG_MODE && (
-          <div className="mb-4 text-center text-xs text-yellow-400">
+          <div className="mb-3 sm:mb-4 text-center text-xs text-yellow-400">
             DEBUG MODE — test{" "}
             {DEBUG_TIME} soniyada yakunlanadi
           </div>
         )}
 
         {/* PROGRESS */}
-
-        <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden mb-8">
-
+        <div className="w-full h-1.5 sm:h-2 bg-slate-800 rounded-full overflow-hidden mb-5 sm:mb-8">
           <div
             className="h-full bg-blue-500 transition-all"
             style={{
               width: `${progress}%`,
             }}
           />
-
         </div>
 
         {/* QUESTION */}
+        <div className="bg-slate-900 rounded-2xl p-4 sm:p-5 md:p-7">
 
-        <div className="bg-slate-900 rounded-2xl p-5 md:p-7">
-
-          <h1 className="text-xl md:text-2xl font-bold mb-6 leading-relaxed">
+          <h1 className="text-base sm:text-lg md:text-2xl font-bold mb-4 sm:mb-5 md:mb-6 leading-snug sm:leading-relaxed break-words">
             {question.question}
           </h1>
 
           {/* MAIN QUESTION IMAGE */}
-
           {question.image && (
-            <div className="mb-8 flex justify-center">
-
+            <div className="mb-5 sm:mb-6 md:mb-8 flex justify-center">
               <img
                 src={question.image}
                 alt={`Savol ${
                   currentQuestion + 1
                 }`}
-                className="max-w-full max-h-[420px] object-contain rounded-xl"
+                className="max-w-full max-h-[300px] sm:max-h-[360px] md:max-h-[420px] object-contain rounded-xl"
               />
-
             </div>
           )}
 
           {/* OPTIONS */}
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
 
             {question.options.map(
               (option) => {
@@ -365,23 +342,21 @@ export default function TestPage() {
                       }
                     `}
                   >
-
                     {image ? (
                       <img
                         src={image}
                         alt={`Variant ${label}`}
-                        className="w-full h-36 object-contain p-3"
+                        className="w-full h-24 sm:h-28 md:h-36 object-contain p-2 sm:p-2.5 md:p-3"
                       />
                     ) : (
-                      <div className="p-5 text-center">
+                      <div className="p-3 sm:p-4 md:p-5 text-center">
 
-                        <div className="text-lg font-semibold">
+                        <div className="text-sm sm:text-base md:text-lg font-semibold break-words">
                           {text}
                         </div>
 
                       </div>
                     )}
-
                   </button>
                 );
               }
@@ -390,12 +365,11 @@ export default function TestPage() {
           </div>
 
           {/* NEXT BUTTON */}
-
           <button
             onClick={handleNext}
             disabled={!selectedAnswer}
             className={`
-              w-full mt-6 py-4 rounded-xl font-bold text-lg transition
+              w-full mt-4 sm:mt-6 py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition
               ${
                 selectedAnswer
                   ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
