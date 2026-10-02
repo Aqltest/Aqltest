@@ -115,16 +115,28 @@ export async function POST(request: Request) {
       });
 
     if (error) {
-      console.error("Supabase error:", error);
+  console.error("Supabase error:", error);
 
-      return NextResponse.json(
-        {
-          error:
-            "Natijani saqlashda xatolik.",
-        },
-        { status: 500 }
-      );
-    }
+  if (
+    error.code === "23505" &&
+    telegramUserId !== null
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "Siz bepul testni allaqachon ishlab bo‘lgansiz.",
+      },
+      { status: 409 }
+    );
+  }
+
+  return NextResponse.json(
+    {
+      error: "Natijani saqlashda xatolik.",
+    },
+    { status: 500 }
+  );
+}
 
     return NextResponse.json({
       success: true,
