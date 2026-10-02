@@ -12,8 +12,8 @@ type ResultData = {
   weightedScore: number;
   timeUsed: number;
   answers: (string | null)[];
-  certificateId: string;
-  shareUrl: string;
+  certificateId: string | null;
+  shareUrl: string | null;
 };
 
 type SectionResult = {
@@ -26,66 +26,45 @@ type SectionResult = {
 
 const sectionDescriptions: Record<string, string> = {
   "Sonli mantiq":
-    "Sonlar orasidagi qonuniyatlarni aniqlash, ketma-ketliklarni tahlil qilish va matematik bog‘lanishlarni topish bilan bog‘liq topshiriqlar.",
-
+    "Sonlar, hisoblash va raqamlar orasidagi mantiqiy bog‘lanishlarni aniqlash qobiliyati.",
   "Vizual mantiq":
-    "Shakllar, naqshlar va vizual o‘zgarishlar orasidagi qoidalarni aniqlashga asoslangan topshiriqlar.",
-
+    "Shakllar, tasvirlar va fazoviy o‘zgarishlar orasidagi bog‘lanishlarni ko‘rish qobiliyati.",
   Analogiya:
-    "Tushunchalar yoki obyektlar orasidagi munosabatni aniqlash va shu munosabatni boshqa vaziyatga qo‘llash bilan bog‘liq topshiriqlar.",
-
+    "Tushunchalar va obyektlar o‘rtasidagi o‘xshashlik hamda munosabatlarni aniqlash qobiliyati.",
   "Mantiqiy xulosa":
-    "Berilgan ma’lumotlardan mantiqiy xulosa chiqarish va shartlar o‘rtasidagi bog‘lanishlarni tushunishga asoslangan topshiriqlar.",
-
+    "Berilgan ma’lumotlardan mantiqiy xulosa chiqarish va shartlarni to‘g‘ri tahlil qilish qobiliyati.",
   "Murakkab ketma-ketlik":
-    "Bir nechta qoidaga ega bo‘lgan ketma-ketliklarni bosqichma-bosqich tahlil qilish va keyingi elementni aniqlashga qaratilgan topshiriqlar.",
-
+    "Murakkab ketma-ketliklar va bir nechta qoidalarni bir vaqtda aniqlash qobiliyati.",
   "Advanced vizual":
-    "Murakkab shakllar, fazoviy o‘zgarishlar va bir nechta vizual qoidalarni bir vaqtda tahlil qilishga asoslangan topshiriqlar.",
+    "Murakkab vizual naqshlar va bir nechta o‘zgarishlarni kuzatish qobiliyati.",
 };
 
 export default function PremiumPage() {
   const router = useRouter();
 
-  const [result, setResult] =
-    useState<ResultData | null>(null);
+  const [result, setResult] = useState<ResultData | null>(null);
 
-  const [sections, setSections] =
-    useState<SectionResult[]>([]);
+  const [sections, setSections] = useState<SectionResult[]>([]);
 
   const [strongestSection, setStrongestSection] =
     useState<SectionResult | null>(null);
 
-  const [secondStrongestSection, setSecondStrongestSection] =
-    useState<SectionResult | null>(null);
-
   const [name, setName] = useState("");
 
-  const [downloading, setDownloading] =
-    useState(false);
+  const [downloading, setDownloading] = useState(false);
 
-  const [sharing, setSharing] =
-    useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [certificateRef] =
-    useState<React.RefObject<HTMLDivElement | null>>(
-      () => ({ current: null })
-    );
+  const certificateRef = useRef<HTMLDivElement>(null);
 
   // =========================================================
-  // LOAD PREMIUM RESULT
+  // LOAD PREMIUM RESULT FROM SERVER
   // =========================================================
 
   useEffect(() => {
     async function loadPremiumResult() {
       try {
-        const attemptId =
-          localStorage.getItem(
-            "aqltest_attempt_id"
-          );
+        const attemptId = localStorage.getItem("aqltest_attempt_id");
 
         if (!attemptId) {
           router.push("/result");
@@ -96,13 +75,9 @@ export default function PremiumPage() {
           `/api/attempt/premium?id=${attemptId}`
         );
 
-        const data =
-          await response.json();
+        const data = await response.json();
 
-        if (
-          !response.ok ||
-          !data.success
-        ) {
+        if (!response.ok || !data.success) {
           console.error(
             "Premium natija olinmadi:",
             data
@@ -112,39 +87,24 @@ export default function PremiumPage() {
           return;
         }
 
-        const attempt =
-          data.attempt;
+        const attempt = data.attempt;
 
         setResult({
           score: attempt.score,
           total: attempt.total,
-          percentage:
-            attempt.percentage,
+          percentage: attempt.percentage,
           weightedScore:
-            attempt.weightedScore ??
-            attempt.percentage,
-          timeUsed:
-            attempt.timeUsed,
-          answers:
-            attempt.answers,
-          certificateId:
-            attempt.certificateId,
-          shareUrl:
-            attempt.shareUrl,
+            attempt.weightedScore ?? attempt.percentage,
+          timeUsed: attempt.timeUsed,
+          answers: attempt.answers,
+          certificateId: attempt.certificateId ?? null,
+          shareUrl: attempt.shareUrl ?? null,
         });
 
-        setSections(
-          data.sections ?? []
-        );
+        setSections(data.sections ?? []);
 
         setStrongestSection(
-          data.strongestSection ??
-            null
-        );
-
-        setSecondStrongestSection(
-          data.secondStrongestSection ??
-            null
+          data.strongestSection ?? null
         );
       } catch (error) {
         console.error(
@@ -161,9 +121,7 @@ export default function PremiumPage() {
     loadPremiumResult();
 
     const savedName =
-      localStorage.getItem(
-        "aqltest_name"
-      );
+      localStorage.getItem("aqltest_name");
 
     if (savedName) {
       setName(savedName);
@@ -176,30 +134,27 @@ export default function PremiumPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
+      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="text-5xl mb-3">
+          <div className="text-5xl mb-4">
             🧠
           </div>
 
-          <h1 className="text-xl sm:text-2xl font-bold">
-            Premium natija yuklanmoqda...
-          </h1>
-
-          <p className="text-slate-400 text-sm mt-2">
-            Batafsil tahlilingiz tayyorlanmoqda.
+          <p className="text-slate-400">
+            Natija yuklanmoqda...
           </p>
         </div>
       </main>
     );
   }
 
-  if (
-    !result ||
-    !strongestSection
-  ) {
+  // =========================================================
+  // RESULT NOT FOUND
+  // =========================================================
+
+  if (!result || !strongestSection) {
     return (
-      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
+      <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-4">
         <div className="text-center">
           <div className="text-5xl mb-4">
             🧠
@@ -210,15 +165,12 @@ export default function PremiumPage() {
           </h1>
 
           <p className="text-slate-400 text-sm mb-5">
-            Premium natijani ochish uchun
-            testni ishlab ko‘ring.
+            Premium natijani ko‘rish uchun avval test natijangizni oching.
           </p>
 
           <button
-            onClick={() =>
-              router.push("/result")
-            }
-            className="bg-blue-600 hover:bg-blue-700 px-5 py-3 rounded-xl font-bold text-sm transition"
+            onClick={() => router.push("/result")}
+            className="bg-blue-600 hover:bg-blue-700 px-5 py-3 rounded-xl font-bold transition"
           >
             ← Natijaga qaytish
           </button>
@@ -228,6 +180,26 @@ export default function PremiumPage() {
   }
 
   // =========================================================
+  // SECOND STRONGEST SECTION
+  // =========================================================
+
+  const sortedSections = [...sections].sort(
+    (a, b) => {
+      if (b.percentage !== a.percentage) {
+        return b.percentage - a.percentage;
+      }
+
+      return b.score - a.score;
+    }
+  );
+
+  const secondStrongestSection =
+    sortedSections.find(
+      (section) =>
+        section.name !== strongestSection.name
+    ) ?? null;
+
+  // =========================================================
   // TIME
   // =========================================================
 
@@ -235,21 +207,17 @@ export default function PremiumPage() {
     result.timeUsed / 60
   );
 
-  const seconds =
-    result.timeUsed % 60;
+  const seconds = result.timeUsed % 60;
 
-  const formattedTime =
-    `${minutes}:${seconds
-      .toString()
-      .padStart(2, "0")}`;
+  const formattedTime = `${minutes}:${seconds
+    .toString()
+    .padStart(2, "0")}`;
 
   // =========================================================
   // SAVE NAME
   // =========================================================
 
-  function handleNameChange(
-    value: string
-  ) {
+  function handleNameChange(value: string) {
     setName(value);
 
     localStorage.setItem(
@@ -259,21 +227,91 @@ export default function PremiumPage() {
   }
 
   // =========================================================
-  // CERTIFICATE DATE
+  // CERTIFICATE ID
   // =========================================================
 
-  const certificateDate =
-    new Date().toLocaleDateString(
-      "uz-UZ",
-      {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }
+  const certificateId =
+    result.certificateId ??
+    "Sertifikat ID mavjud emas";
+
+  // =========================================================
+  // SHARE RESULT
+  // =========================================================
+
+  async function shareResult() {
+  const shareUrl = result?.shareUrl;
+  const strongestName =
+    strongestSection?.name ?? "AqlTest natijasi";
+
+  if (!shareUrl) {
+    alert(
+      "Ulashish havolasi hali mavjud emas."
     );
+    return;
+  }
+
+  const shareText =
+    `🧠 AqlTest natijam\n\n` +
+    `AqlTest Score: ${result?.weightedScore ?? 0}/100\n` +
+    `Kuchli yo'nalish: ${strongestName}\n\n` +
+    `Natijani ko'rish: ${shareUrl}`;
+
+  try {
+    const telegram =
+      (window as any).Telegram?.WebApp;
+
+    if (
+      telegram &&
+      typeof telegram.openTelegramLink ===
+        "function"
+    ) {
+      const telegramShareUrl =
+        `https://t.me/share/url?url=${encodeURIComponent(
+          shareUrl
+        )}&text=${encodeURIComponent(
+          shareText
+        )}`;
+
+      telegram.openTelegramLink(
+        telegramShareUrl
+      );
+
+      return;
+    }
+
+    if (
+      navigator.share &&
+      typeof navigator.share ===
+        "function"
+    ) {
+      await navigator.share({
+        title: "AqlTest natijam",
+        text: shareText,
+        url: shareUrl,
+      });
+
+      return;
+    }
+
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(
+        shareText
+      );
+
+      alert(
+        "Natija havolasi nusxalandi."
+      );
+    }
+  } catch (error) {
+    console.error(
+      "Ulashishda xatolik:",
+      error
+    );
+  }
+}
 
   // =========================================================
-  // DOWNLOAD CERTIFICATE
+  // DOWNLOAD PDF
   // =========================================================
 
   async function downloadCertificate() {
@@ -286,6 +324,10 @@ export default function PremiumPage() {
     }
 
     if (!certificateRef.current) {
+      alert(
+        "Sertifikat tayyor emas."
+      );
+
       return;
     }
 
@@ -298,23 +340,18 @@ export default function PremiumPage() {
           {
             scale: 2,
             useCORS: true,
-            backgroundColor:
-              "#ffffff",
+            backgroundColor: "#ffffff",
           }
         );
 
       const imageData =
-        canvas.toDataURL(
-          "image/png"
-        );
+        canvas.toDataURL("image/png");
 
-      const pdf =
-        new jsPDF({
-          orientation:
-            "landscape",
-          unit: "mm",
-          format: "a4",
-        });
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
 
       const pageWidth = 297;
       const pageHeight = 210;
@@ -331,14 +368,11 @@ export default function PremiumPage() {
       pdf.save(
         `AqlTest-Sertifikat-${name
           .trim()
-          .replace(
-            /\s+/g,
-            "-"
-          )}.pdf`
+          .replace(/\s+/g, "-")}.pdf`
       );
     } catch (error) {
       console.error(
-        "Certificate PDF error:",
+        "PDF xatoligi:",
         error
       );
 
@@ -351,177 +385,83 @@ export default function PremiumPage() {
   }
 
   // =========================================================
-  // SHARE RESULT
-  // =========================================================
-
-  async function shareResult() {
-    if (!result.shareUrl) {
-      alert(
-        "Ulashish havolasi topilmadi."
-      );
-
-      return;
-    }
-
-    const shareText =
-      `🧠 Men AqlTest testini topshirdim!\n\n` +
-      `🏆 AqlTest Score: ${result.weightedScore}/100\n` +
-      `💪 Kuchli yo‘nalishim: ${
-        strongestSection.name
-      }\n\n` +
-      `Siz ham o‘zingizni sinab ko‘ring!`;
-
-    setSharing(true);
-
-    try {
-      const webApp =
-        (
-          window as any
-        ).Telegram?.WebApp;
-
-      // Telegram Mini App ichida
-      if (
-        webApp &&
-        typeof webApp.openTelegramLink ===
-          "function"
-      ) {
-        const shareUrl =
-          `https://t.me/share/url?url=${encodeURIComponent(
-            result.shareUrl
-          )}&text=${encodeURIComponent(
-            shareText
-          )}`;
-
-        webApp.openTelegramLink(
-          shareUrl
-        );
-
-        return;
-      }
-
-      // Oddiy browser
-      if (
-        navigator.share
-      ) {
-        await navigator.share({
-          title:
-            "AqlTest natijasi",
-          text: shareText,
-          url: result.shareUrl,
-        });
-
-        return;
-      }
-
-      // Clipboard fallback
-      await navigator.clipboard.writeText(
-        `${shareText}\n\n${result.shareUrl}`
-      );
-
-      alert(
-        "Natija havolasi nusxalandi."
-      );
-    } catch (error) {
-      console.error(
-        "Share error:",
-        error
-      );
-    } finally {
-      setSharing(false);
-    }
-  }
-
-  // =========================================================
   // UI
   // =========================================================
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white px-3 py-5 sm:px-4 sm:py-8">
-
+    <main className="min-h-screen bg-slate-950 text-white px-4 py-8">
       <div className="max-w-2xl mx-auto">
 
-        {/* ===================================================
-            HEADER
-        =================================================== */}
+        {/* ================================================= */}
+        {/* HEADER */}
+        {/* ================================================= */}
 
-        <div className="text-center mb-7">
-
+        <div className="text-center mb-8">
           <div className="text-5xl mb-3">
             🧠
           </div>
 
-          <p className="text-blue-400 text-xs sm:text-sm font-bold uppercase tracking-widest">
+          <p className="text-blue-400 text-sm font-bold uppercase tracking-widest">
             Premium natija
           </p>
 
-          <h1 className="text-3xl sm:text-4xl font-bold mt-2">
+          <h1 className="text-3xl font-bold mt-2">
             Batafsil natijangiz
           </h1>
 
-          <p className="text-slate-400 mt-2 text-sm sm:text-base">
-            Test natijangiz batafsil tahlil qilindi.
+          <p className="text-slate-400 mt-2">
+            Test natijangiz to‘liq tahlil qilindi.
           </p>
-
         </div>
 
-        {/* ===================================================
-            SCORE
-        =================================================== */}
+        {/* ================================================= */}
+        {/* MAIN RESULT */}
+        {/* ================================================= */}
 
         <div className="bg-slate-900 rounded-2xl p-4 sm:p-6 mb-5">
 
-          <div className="bg-slate-800 rounded-2xl p-6 sm:p-7 text-center">
+          <div className="bg-slate-800 rounded-xl p-5 sm:p-6 text-center">
 
-            <p className="text-xs sm:text-sm text-slate-400">
+            <p className="text-sm text-slate-400">
               AqlTest Score
             </p>
 
-            <div className="text-6xl sm:text-7xl font-bold text-blue-400 mt-2">
+            <div className="text-5xl sm:text-6xl font-bold text-blue-400 mt-2">
               {result.weightedScore}
             </div>
 
-            <p className="text-slate-500 text-xs mt-1">
+            <p className="text-slate-500 text-[11px] sm:text-xs mt-1">
               100 ballik tizim
             </p>
 
-            <div className="mt-4 flex items-center justify-center gap-5 text-xs sm:text-sm">
+            <p className="text-sm text-slate-300 mt-3">
+              {result.score}/{result.total} ta to‘g‘ri javob
+            </p>
 
-              <div>
-                <div className="text-slate-500">
-                  To‘g‘ri javoblar
-                </div>
+          </div>
 
-                <div className="font-bold text-white mt-1">
-                  {result.score}/{result.total}
-                </div>
-              </div>
+          <div className="bg-slate-800 rounded-xl p-4 mt-4">
 
-              <div className="w-px h-8 bg-slate-700" />
+            <p className="text-xs text-slate-400">
+              Testni bajarish vaqti
+            </p>
 
-              <div>
-                <div className="text-slate-500">
-                  Vaqt
-                </div>
-
-                <div className="font-bold text-white mt-1">
-                  {formattedTime}
-                </div>
-              </div>
-
-            </div>
+            <p className="text-xl font-bold mt-1">
+              {formattedTime}
+            </p>
 
           </div>
 
         </div>
 
-        {/* ===================================================
-            STRONGEST SECTION
-        =================================================== */}
+        {/* ================================================= */}
+        {/* STRONGEST SECTION */}
+        {/* ================================================= */}
 
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-5 sm:p-6 mb-4">
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-5 sm:p-6 mb-5">
 
-          <p className="text-blue-400 text-xs font-bold uppercase tracking-wide">
-            🏆 Sizning kuchli yo‘nalishingiz
+          <p className="text-sm text-blue-400 font-medium">
+            Sizning kuchli yo‘nalishingiz
           </p>
 
           <p className="text-xl sm:text-2xl font-bold mt-2">
@@ -529,68 +469,61 @@ export default function PremiumPage() {
             {strongestSection.name}
           </p>
 
-          <p className="text-slate-300 text-sm leading-relaxed mt-3">
+          <p className="text-slate-300 text-sm mt-3 leading-6">
             {sectionDescriptions[
               strongestSection.name
             ] ??
-              "Ushbu yo‘nalishdagi topshiriqlarda yaxshi natija ko‘rsatdingiz."}
+              "Ushbu yo‘nalishda test davomida yuqori natija ko‘rsatgansiz."}
           </p>
 
-          <div className="bg-slate-900/70 rounded-xl p-3.5 mt-4">
+          <div className="mt-4 p-3 rounded-xl bg-slate-900/60 border border-slate-700/50">
 
-            <p className="text-blue-400 text-xs font-bold mb-1">
-              📌 Bu nimani anglatadi?
+            <p className="text-xs text-slate-500">
+              Bu nimani anglatadi?
             </p>
 
-            <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
-              Ushbu test natijangizga ko‘ra,
-              siz aynan shu turdagi topshiriqlarda
-              nisbatan yaxshi natija ko‘rsatdingiz.
-              Bu xulosa AqlTest testidagi
-              natijalaringizga asoslangan.
+            <p className="text-sm text-slate-300 mt-1 leading-5">
+              Ushbu natija testdagi shu yo‘nalish
+              bo‘yicha nisbatan kuchliroq ishlaganingizni
+              ko‘rsatadi. Bu klinik yoki ilmiy
+              psixologik tashxis emas.
             </p>
 
           </div>
 
         </div>
 
-        {/* ===================================================
-            SECOND STRONGEST
-        =================================================== */}
+        {/* ================================================= */}
+        {/* SECOND STRONGEST */}
+        {/* ================================================= */}
 
         {secondStrongestSection && (
-          <div className="bg-slate-900 rounded-2xl p-4 sm:p-5 mb-6">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-5">
 
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-wide">
-              ⭐ Keyingi kuchli yo‘nalish
+            <p className="text-sm text-slate-400">
+              Keyingi kuchli yo‘nalishingiz
             </p>
 
-            <p className="text-lg sm:text-xl font-bold mt-2">
+            <p className="text-lg font-bold mt-2">
               {secondStrongestSection.icon}{" "}
               {secondStrongestSection.name}
             </p>
 
-            <p className="text-slate-400 text-xs sm:text-sm leading-relaxed mt-2">
+            <p className="text-slate-400 text-sm mt-2 leading-5">
               {sectionDescriptions[
                 secondStrongestSection.name
               ] ??
-                "Ushbu yo‘nalishdagi topshiriqlarda ham yaxshi natija ko‘rsatdingiz."}
+                "Ushbu yo‘nalish bo‘yicha ham yaxshi natija qayd etilgansiz."}
             </p>
-
-            <div className="text-blue-400 text-xs font-bold mt-3">
-              Natija:{" "}
-              {secondStrongestSection.score}/
-              {secondStrongestSection.total}
-            </div>
 
           </div>
         )}
 
-        {/* ===================================================
-            SECTION RESULTS
-        =================================================== */}
+        {/* ================================================= */}
+        {/* SECTION RESULTS */}
+        {/* ================================================= */}
 
-        <div className="mb-6">
+        <div className="mb-5 sm:mb-6">
 
           <h2 className="font-bold text-base sm:text-lg mb-3">
             📊 Yo‘nalishlar bo‘yicha natija
@@ -601,17 +534,15 @@ export default function PremiumPage() {
             {sections.map(
               (section) => (
                 <div
-                  key={
-                    section.name
-                  }
-                  className="bg-slate-900 rounded-xl px-3.5 py-3 sm:px-4 sm:py-3.5"
+                  key={section.name}
+                  className="bg-slate-800 rounded-lg sm:rounded-xl px-3 py-2.5 sm:px-4 sm:py-3"
                 >
 
                   <div className="flex justify-between items-center mb-1.5">
 
                     <div className="flex items-center gap-2 min-w-0">
 
-                      <span className="text-lg shrink-0">
+                      <span className="text-lg sm:text-xl shrink-0">
                         {section.icon}
                       </span>
 
@@ -628,12 +559,18 @@ export default function PremiumPage() {
 
                   </div>
 
-                  <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
 
                     <div
                       className="h-full bg-blue-500 transition-all"
                       style={{
-                        width: `${section.percentage}%`,
+                        width: `${Math.min(
+                          100,
+                          Math.max(
+                            0,
+                            section.percentage
+                          )
+                        )}%`,
                       }}
                     />
 
@@ -647,61 +584,50 @@ export default function PremiumPage() {
 
         </div>
 
-        {/* ===================================================
-            PREMIUM INFO
-        =================================================== */}
+        {/* ================================================= */}
+        {/* PREMIUM BENEFITS */}
+        {/* ================================================= */}
 
-        <div className="bg-slate-900 rounded-2xl p-5 sm:p-6 mb-5">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 mb-5">
 
-          <div className="text-blue-400 text-xs font-bold uppercase tracking-wide mb-1">
-            💎 Premium
-          </div>
-
-          <h2 className="text-xl sm:text-2xl font-bold">
-            Sizning premium imkoniyatlaringiz
+          <h2 className="font-bold text-lg mb-4">
+            💎 Premium imkoniyatlari
           </h2>
 
-          <div className="space-y-2.5 mt-4 text-sm text-slate-300">
+          <div className="space-y-2 text-slate-300 text-sm">
 
             <div className="flex gap-2">
               <span>✓</span>
               <span>
-                6 ta yo‘nalish bo‘yicha batafsil tahlil
+                6 ta yo‘nalish bo‘yicha batafsil natija
               </span>
             </div>
 
             <div className="flex gap-2">
               <span>✓</span>
               <span>
-                Kuchli yo‘nalishingiz
+                Qaysi yo‘nalishda kuchli ekaningiz
               </span>
             </div>
 
             <div className="flex gap-2">
               <span>✓</span>
               <span>
-                AqlTest Score
+                AqlTest reytingida qatnashish
               </span>
             </div>
 
             <div className="flex gap-2">
               <span>✓</span>
               <span>
-                🏆 Reytingda ishtirok etish
+                PDF sertifikat olish
               </span>
             </div>
 
             <div className="flex gap-2">
               <span>✓</span>
               <span>
-                📜 A4 PDF sertifikat
-              </span>
-            </div>
-
-            <div className="flex gap-2">
-              <span>✓</span>
-              <span>
-                🔗 Natijani ulashish
+                Natijani ulashish
               </span>
             </div>
 
@@ -709,11 +635,27 @@ export default function PremiumPage() {
 
         </div>
 
-        {/* ===================================================
-            CERTIFICATE
-        =================================================== */}
+        {/* ================================================= */}
+        {/* SHARE */}
+        {/* ================================================= */}
 
-        <div className="bg-slate-900 rounded-2xl p-5 sm:p-6">
+        <button
+          onClick={shareResult}
+          disabled={!result.shareUrl}
+          className={`w-full py-4 rounded-xl font-bold text-base sm:text-lg transition ${
+            result.shareUrl
+              ? "bg-slate-800 hover:bg-slate-700 active:bg-slate-600"
+              : "bg-slate-800 text-slate-600 cursor-not-allowed"
+          }`}
+        >
+          🔗 Natijani ulashish
+        </button>
+
+        {/* ================================================= */}
+        {/* CERTIFICATE */}
+        {/* ================================================= */}
+
+        <div className="bg-slate-900 rounded-2xl p-5 sm:p-6 mt-5">
 
           <div className="text-center mb-5">
 
@@ -725,9 +667,9 @@ export default function PremiumPage() {
               Sertifikatingiz
             </h2>
 
-            <p className="text-slate-400 text-sm mt-2">
-              AqlTest natijangiz asosida
-              A4 formatdagi PDF sertifikat.
+            <p className="text-slate-400 text-sm mt-2 leading-5">
+              Natijangizni A4 formatdagi PDF
+              sertifikat sifatida saqlang.
             </p>
 
           </div>
@@ -750,24 +692,8 @@ export default function PremiumPage() {
             className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-4 outline-none focus:border-blue-500 transition mb-4"
           />
 
-          {/* CERTIFICATE ID */}
-
-          <div className="bg-slate-800 rounded-xl p-4 mb-4">
-
-            <div className="text-xs text-slate-500">
-              Sertifikat ID
-            </div>
-
-            <div className="text-sm sm:text-base font-bold text-slate-200 mt-1 break-all">
-              {result.certificateId}
-            </div>
-
-          </div>
-
           <button
-            onClick={
-              downloadCertificate
-            }
+            onClick={downloadCertificate}
             disabled={
               downloading ||
               !name.trim()
@@ -784,102 +710,55 @@ export default function PremiumPage() {
           >
             {downloading
               ? "⏳ PDF tayyorlanmoqda..."
-              : "🏆 Sertifikatni PDF qilib olish"}
-          </button>
-
-          <button
-            onClick={
-              shareResult
-            }
-            disabled={sharing}
-            className={`
-              w-full mt-3 py-4 rounded-xl font-bold text-base sm:text-lg transition border
-              ${
-                sharing
-                  ? "bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed"
-                  : "bg-slate-800 hover:bg-slate-700 border-slate-700 text-white"
-              }
-            `}
-          >
-            {sharing
-              ? "⏳ Ulashish oynasi..."
-              : "🔗 Natijani ulashish"}
+              : "🏆 Sertifikatni PDF qilib yuklab olish"}
           </button>
 
         </div>
 
-        {/* ===================================================
-            SHARE INFO
-        =================================================== */}
+        {/* ================================================= */}
+        {/* NAVIGATION */}
+        {/* ================================================= */}
 
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mt-4">
-
-          <div className="text-blue-400 text-xs font-bold mb-1">
-            🔗 NATIJANI ULASHISH
-          </div>
-
-          <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
-            Natijangizni do‘stlaringiz bilan
-            ulashishingiz mumkin. Ulashiladigan
-            sahifada shaxsiy javoblaringiz yoki
-            Telegram ID'ingiz ko‘rsatilmaydi.
-          </p>
-
-        </div>
-
-        {/* ===================================================
-            NAVIGATION
-        =================================================== */}
-
-        <div className="grid grid-cols-2 gap-2 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
 
           <button
             onClick={() =>
-              router.push(
-                "/ranking"
-              )
+              router.push("/ranking")
             }
-            className="py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-sm font-semibold transition"
+            className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 transition font-semibold"
           >
             🏆 Reyting
           </button>
 
           <button
             onClick={() =>
-              router.push(
-                "/result"
-              )
+              router.push("/result")
             }
-            className="py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-sm font-semibold transition"
+            className="w-full py-3 rounded-xl text-slate-400 hover:text-white transition font-semibold"
           >
-            ← Natija
+            ← Natijaga qaytish
           </button>
 
         </div>
 
       </div>
 
-      {/* ===================================================
+      {/* =====================================================
           HIDDEN CERTIFICATE
-      =================================================== */}
+      ===================================================== */}
 
       <div
         ref={certificateRef}
         style={{
-          position:
-            "fixed",
+          position: "fixed",
           left: "-10000px",
           top: "0",
           width: "1123px",
           height: "794px",
-          background:
-            "#ffffff",
-          color:
-            "#111827",
-          fontFamily:
-            "Arial, sans-serif",
-          overflow:
-            "hidden",
+          background: "#ffffff",
+          color: "#111827",
+          fontFamily: "Arial, sans-serif",
+          overflow: "hidden",
         }}
       >
 
@@ -888,10 +767,8 @@ export default function PremiumPage() {
             width: "100%",
             height: "100%",
             padding: "45px",
-            boxSizing:
-              "border-box",
-            background:
-              "#ffffff",
+            boxSizing: "border-box",
+            background: "#ffffff",
           }}
         >
 
@@ -899,22 +776,14 @@ export default function PremiumPage() {
             style={{
               width: "100%",
               height: "100%",
-              border:
-                "8px solid #1d4ed8",
-              boxSizing:
-                "border-box",
-              position:
-                "relative",
-              display:
-                "flex",
-              flexDirection:
-                "column",
-              alignItems:
-                "center",
-              justifyContent:
-                "center",
-              textAlign:
-                "center",
+              border: "8px solid #1d4ed8",
+              boxSizing: "border-box",
+              position: "relative",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
             }}
           >
 
@@ -922,16 +791,11 @@ export default function PremiumPage() {
 
             <div
               style={{
-                fontSize:
-                  "24px",
-                fontWeight:
-                  "bold",
-                letterSpacing:
-                  "5px",
-                color:
-                  "#1d4ed8",
-                marginBottom:
-                  "12px",
+                fontSize: "24px",
+                fontWeight: "bold",
+                letterSpacing: "5px",
+                color: "#1d4ed8",
+                marginBottom: "12px",
               }}
             >
               AQLTEST
@@ -939,14 +803,10 @@ export default function PremiumPage() {
 
             <div
               style={{
-                fontSize:
-                  "18px",
-                letterSpacing:
-                  "4px",
-                color:
-                  "#64748b",
-                marginBottom:
-                  "35px",
+                fontSize: "18px",
+                letterSpacing: "4px",
+                color: "#64748b",
+                marginBottom: "35px",
               }}
             >
               TEST NATIJA SERTIFIKATI
@@ -956,41 +816,29 @@ export default function PremiumPage() {
 
             <div
               style={{
-                fontSize:
-                  "48px",
-                fontWeight:
-                  "bold",
-                color:
-                  "#111827",
-                marginBottom:
-                  "20px",
+                fontSize: "48px",
+                fontWeight: "bold",
+                color: "#111827",
+                marginBottom: "20px",
               }}
             >
-              {name ||
-                "Ism Familiya"}
+              {name || "Ism Familiya"}
             </div>
 
             <div
               style={{
-                width:
-                  "500px",
-                height:
-                  "2px",
-                background:
-                  "#cbd5e1",
-                marginBottom:
-                  "20px",
+                width: "500px",
+                height: "2px",
+                background: "#cbd5e1",
+                marginBottom: "20px",
               }}
             />
 
             <div
               style={{
-                fontSize:
-                  "18px",
-                color:
-                  "#475569",
-                marginBottom:
-                  "28px",
+                fontSize: "18px",
+                color: "#475569",
+                marginBottom: "28px",
               }}
             >
               AqlTest testini muvaffaqiyatli yakunladi
@@ -1000,15 +848,11 @@ export default function PremiumPage() {
 
             <div
               style={{
-                display:
-                  "flex",
+                display: "flex",
                 gap: "70px",
-                alignItems:
-                  "center",
-                justifyContent:
-                  "center",
-                marginBottom:
-                  "35px",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: "35px",
               }}
             >
 
@@ -1016,12 +860,9 @@ export default function PremiumPage() {
 
                 <div
                   style={{
-                    fontSize:
-                      "16px",
-                    color:
-                      "#64748b",
-                    marginBottom:
-                      "8px",
+                    fontSize: "16px",
+                    color: "#64748b",
+                    marginBottom: "8px",
                   }}
                 >
                   AqlTest Score
@@ -1029,17 +870,12 @@ export default function PremiumPage() {
 
                 <div
                   style={{
-                    fontSize:
-                      "46px",
-                    fontWeight:
-                      "bold",
-                    color:
-                      "#1d4ed8",
+                    fontSize: "46px",
+                    fontWeight: "bold",
+                    color: "#1d4ed8",
                   }}
                 >
-                  {
-                    result.weightedScore
-                  }
+                  {result.weightedScore}
                 </div>
 
               </div>
@@ -1048,12 +884,9 @@ export default function PremiumPage() {
 
                 <div
                   style={{
-                    fontSize:
-                      "16px",
-                    color:
-                      "#64748b",
-                    marginBottom:
-                      "8px",
+                    fontSize: "16px",
+                    color: "#64748b",
+                    marginBottom: "8px",
                   }}
                 >
                   To‘g‘ri javoblar
@@ -1061,18 +894,12 @@ export default function PremiumPage() {
 
                 <div
                   style={{
-                    fontSize:
-                      "32px",
-                    fontWeight:
-                      "bold",
+                    fontSize: "32px",
+                    fontWeight: "bold",
                   }}
                 >
-                  {
-                    result.score
-                  }/
-                  {
-                    result.total
-                  }
+                  {result.score}/
+                  {result.total}
                 </div>
 
               </div>
@@ -1081,12 +908,9 @@ export default function PremiumPage() {
 
                 <div
                   style={{
-                    fontSize:
-                      "16px",
-                    color:
-                      "#64748b",
-                    marginBottom:
-                      "8px",
+                    fontSize: "16px",
+                    color: "#64748b",
+                    marginBottom: "8px",
                   }}
                 >
                   Vaqt
@@ -1094,39 +918,29 @@ export default function PremiumPage() {
 
                 <div
                   style={{
-                    fontSize:
-                      "32px",
-                    fontWeight:
-                      "bold",
+                    fontSize: "32px",
+                    fontWeight: "bold",
                   }}
                 >
-                  {
-                    formattedTime
-                  }
+                  {formattedTime}
                 </div>
 
               </div>
 
             </div>
 
-            {/* STRONGEST */}
+            {/* STRONGEST SECTION */}
 
             <div
               style={{
-                fontSize:
-                  "17px",
-                color:
-                  "#334155",
-                marginBottom:
-                  "10px",
+                fontSize: "17px",
+                color: "#334155",
+                marginBottom: "20px",
               }}
             >
-              Kuchli yo‘nalish:
-              {" "}
+              Kuchli yo‘nalish:{" "}
               <strong>
-                {
-                  strongestSection.name
-                }
+                {strongestSection.name}
               </strong>
             </div>
 
@@ -1134,31 +948,21 @@ export default function PremiumPage() {
 
             <div
               style={{
-                position:
-                  "absolute",
-                bottom:
-                  "35px",
-                left:
-                  "50px",
-                right:
-                  "50px",
-                display:
-                  "flex",
-                justifyContent:
-                  "space-between",
-                alignItems:
-                  "flex-end",
-                fontSize:
-                  "13px",
-                color:
-                  "#64748b",
+                position: "absolute",
+                bottom: "35px",
+                left: "50px",
+                right: "50px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-end",
+                fontSize: "13px",
+                color: "#64748b",
               }}
             >
 
               <div
                 style={{
-                  textAlign:
-                    "left",
+                  textAlign: "left",
                 }}
               >
 
@@ -1168,27 +972,21 @@ export default function PremiumPage() {
 
                 <strong
                   style={{
-                    color:
-                      "#334155",
+                    color: "#334155",
                   }}
                 >
-                  {
-                    result.certificateId
-                  }
+                  {certificateId}
                 </strong>
 
               </div>
 
               <div>
-                {
-                  certificateDate
-                }
+                AqlTest
               </div>
 
               <div
                 style={{
-                  textAlign:
-                    "right",
+                  textAlign: "right",
                 }}
               >
 
