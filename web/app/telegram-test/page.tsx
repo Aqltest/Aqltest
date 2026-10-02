@@ -2,17 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: {
-        initData: string;
-        ready: () => void;
-      };
-    };
-  }
-}
-
 export default function TelegramTestPage() {
   const [status, setStatus] = useState("Telegram tekshirilmoqda...");
   const [user, setUser] = useState<{

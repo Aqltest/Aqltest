@@ -2,7 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { questions } from "../data/questions";
-
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: {
+        initData: string;
+        ready: () => void;
+      };
+    };
+  }
+}
 // =========================
 // DEBUG MODE
 // true  = 5 soniyada avtomatik yakunlanadi
@@ -88,6 +97,8 @@ export default function TestPage() {
     // =========================
 
     try {
+      const telegramInitData =
+    window.Telegram?.WebApp?.initData || "";
       const response = await fetch("/api/attempt", {
         method: "POST",
         headers: {
@@ -96,6 +107,7 @@ export default function TestPage() {
         body: JSON.stringify({
           timeUsed,
           answers: finalAnswers,
+          telegramInitData,
         }),
       });
 
