@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabaseAdmin
       .from("attempts")
       .select(
-        "id, score, total, percentage, time_used, answers, is_premium, premium_code, certificate_id, created_at"
+        "id, score, total, percentage, weighted_score, time_used, answers, is_premium, premium_code, certificate_id, created_at"
       )
       .eq("id", id)
       .single();

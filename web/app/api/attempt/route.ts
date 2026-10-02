@@ -87,19 +87,29 @@ export async function POST(request: Request) {
       telegramUserId = telegramUser.id;
     }
 
-    let score = 0;
+    const questionWeights = [
+  2, 2, 3, 3,
+  3, 3, 4, 4,
+  3, 3, 4, 4,
+  6, 4, 5, 5,
+  4, 5, 5, 6,
+  5, 5, 6, 6,
+];
 
-    for (let i = 0; i < answerKey.length; i++) {
-      if (answers[i] === answerKey[i]) {
-        score++;
-      }
-    }
+let score = 0;
+let weightedScore = 0;
 
-    const total = answerKey.length;
+for (let i = 0; i < answerKey.length; i++) {
+  if (answers[i] === answerKey[i]) {
+    score++;
+    weightedScore += questionWeights[i];
+  }
+}
 
-    const percentage = Math.round(
-      (score / total) * 100
-    );
+const total = answerKey.length;
+
+// AqlTest Score: 0–100
+const percentage = weightedScore;
 
     const attemptId = crypto.randomUUID();
 
@@ -114,6 +124,7 @@ export async function POST(request: Request) {
         score,
         total,
         percentage,
+        weighted_score: weightedScore,
         time_used: timeUsed,
         answers,
         telegram_user_id: telegramUserId,

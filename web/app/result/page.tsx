@@ -7,6 +7,7 @@ type ResultData = {
   score: number;
   total: number;
   percentage: number;
+  weightedScore: number;
   timeUsed: number;
   answers: (string | null)[];
   premiumCode: string | null;
@@ -55,13 +56,14 @@ export default function ResultPage() {
         const attempt = data.attempt;
 
         setResult({
-          score: attempt.score,
-          total: attempt.total,
-          percentage: attempt.percentage,
-          timeUsed: attempt.time_used,
-          answers: attempt.answers,
-          premiumCode: attempt.premium_code ?? null,
-        });
+  score: attempt.score,
+  total: attempt.total,
+  percentage: attempt.percentage,
+  weightedScore: attempt.weighted_score ?? attempt.percentage,
+  timeUsed: attempt.time_used,
+  answers: attempt.answers,
+  premiumCode: attempt.premium_code ?? null,
+});
       } catch (error) {
         console.error(
           "Natijani olishda xatolik:",
@@ -180,12 +182,16 @@ export default function ResultPage() {
           <div className="bg-slate-800 rounded-2xl p-4 sm:p-5 text-center mb-3">
 
             <div className="text-slate-400 text-xs sm:text-sm">
-              Umumiy natijangiz
-            </div>
+  AqlTest Score
+</div>
 
-            <div className="text-5xl sm:text-6xl font-bold text-blue-400 mt-1">
-              {result.percentage}%
-            </div>
+<div className="text-5xl sm:text-6xl font-bold text-blue-400 mt-1">
+  {result.weightedScore}
+</div>
+
+<div className="text-slate-500 text-[11px] sm:text-xs mt-1">
+  100 ballik tizim
+</div>
 
           </div>
 
