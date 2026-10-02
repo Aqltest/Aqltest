@@ -114,13 +114,26 @@ export default function TestPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error(
-          "Attempt saqlanmadi:",
-          data
-        );
+  console.error(
+    "Attempt saqlanmadi:",
+    data
+  );
 
-        return;
-      }
+  if (response.status === 409) {
+    alert(
+      data.error ||
+        "Siz bepul testni allaqachon ishlab bo‘lgansiz."
+    );
+    return;
+  }
+
+  alert(
+    data.error ||
+      "Test natijasini saqlashda xatolik yuz berdi."
+  );
+
+  return;
+}
 
       console.log(
         "Attempt saqlandi:",
